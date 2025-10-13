@@ -10,7 +10,21 @@ public class Main {
 // importer dataset (CSON, JSV eller noget andet)
 // morder - variabler: String name, int antalMord, int[] fødselsdag
 
-    public void convertBirth(){}
+    public static String findStjernetegn(int dag, int maaned) {
+        if ((maaned == 3 && dag >= 21) || (maaned == 4 && dag <= 19)) return "Vædder";
+        if ((maaned == 4 && dag >= 20) || (maaned == 5 && dag <= 20)) return "Tyr";
+        if ((maaned == 5 && dag >= 21) || (maaned == 6 && dag <= 20)) return "Tvilling";
+        if ((maaned == 6 && dag >= 21) || (maaned == 7 && dag <= 22)) return "Krebs";
+        if ((maaned == 7 && dag >= 23) || (maaned == 8 && dag <= 22)) return "Løve";
+        if ((maaned == 8 && dag >= 23) || (maaned == 9 && dag <= 22)) return "Jomfru";
+        if ((maaned == 9 && dag >= 23) || (maaned == 10 && dag <= 22)) return "Vægt";
+        if ((maaned == 10 && dag >= 23) || (maaned == 11 && dag <= 21)) return "Skorpion";
+        if ((maaned == 11 && dag >= 22) || (maaned == 12 && dag <= 21)) return "Skytte";
+        if ((maaned == 12 && dag >= 22) || (maaned == 1 && dag <= 19)) return "Stenbuk";
+        if ((maaned == 1 && dag >= 20) || (maaned == 2 && dag <= 18)) return "Vandmand";
+        if ((maaned == 2 && dag >= 19) || (maaned == 3 && dag <= 20)) return "Fisk";
+        return "Ukendt";
+    }
     public void  Apriori(Set<String> kandidat){}
     public double supportWall(){return 0.75;} // denne metode skal afgrænse hvor meget support
     // der skal være for en link mellom to datapunkter. F eks: morder - fisk
