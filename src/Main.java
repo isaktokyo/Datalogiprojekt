@@ -19,7 +19,7 @@ public class Main {
 // metode for at konvertere fødselsdag til horoskop (if -setninger)
 
 // Algoritme - tælle hvor mange stjernetegn der er
-
+//
     // en main som initierer visualiseringen
     public static void main(String []args){
        /* Connection conn = null; // dette er bare kode fra forelesningen. det skal fungere at hente fra sqlite filen
