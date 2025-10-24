@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class indlaesData{
-    public static List<String> getFødselFromDB(String dbPath){
+    public static List<String> getSunSignFromDB(String dbPath){
         List<String> fødsler =  new ArrayList<>();
         Connection conn = null; // dette er bare kode fra forelæsningen. det skal fungere at hente fra sqlite filen
         try {

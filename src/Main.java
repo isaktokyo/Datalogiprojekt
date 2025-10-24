@@ -1,10 +1,6 @@
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class Main {
 
@@ -12,10 +8,28 @@ public class Main {
 // morder - variabler: String name, int antalMord, int[] fødselsdag eller ArrayList fødselsdag
 
     public void  Apriori(Set<String> kandidat){
+        String dbPath = "identifier.sqlite";
+        List<String> lines = indlaesData.getSunSignFromDB(dbPath);
+        DefaultDict<Integer, List<Integer>> item_counts =
+                new DefaultDict<Integer, List<Integer>>(ArrayList.class); // dette er en python metode,
+        // som vi har overført til java. vi har lånt det.
+        item_counts.get("Væren").add(1);
+        item_counts.get("Løven").add(1);
+        item_counts.get("Jomfru").add(1);
+
+
+        System.out.println(item_counts);
+
+        for (String line : lines){
+            item_counts.get(1).add(Integer.parseInt(line));
+        }
+    }
+    public double supportWall(){ // denne metode skal afgrænse hvor meget support
+        // der skal være for en link mellom to datapunkter. F eks: morder - fisk
+       double threshold = 0.75;
+        return threshold;
 
     }
-    public double supportWall(){return 0.75;} // denne metode skal afgrænse hvor meget support
-    // der skal være for en link mellom to datapunkter. F eks: morder - fisk
     public double findSupport(){return 0;}// returnvalue er bare en placeholder
 
 // metode for at konvertere fødselsdag til horoskop (if -setninger)
