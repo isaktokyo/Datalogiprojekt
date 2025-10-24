@@ -21,5 +21,4 @@ return freq; //så beder vi den om at returnere resultatet (fisk=4 eller jomfru=
 }
 
 //nu skal vi igang med "support", hvis der er 10p og 3 af dem er fisk er der 3/10=0,3=30%
-//altså hvor ofte et item forekommer
 
