@@ -40,5 +40,30 @@ public Map<String, Double> filterByMinSupport(Map<String, Double> supportMap) { 
   return filtered;
   //linjerne oppe tjekker om hvert ting har en høj nok værdi (mindst min support) hvis ja, bliver den gemt i filtered som efter sendes tilbage
 }
-  
-  
+
+public Map<String, Double> //metoden giver et map tilbage, hvor hver ting (String) har et tal med komma (Double) koblet til sig.
+  findFrequentItemsWithMinSupoort(List<String>items) { // Den får en liste af ting og returnerer dem, der optræder ofte nok ud fra den fastsatte minimumsgrænse.
+  Map<String, Integer> counts=findFrequentItems(items); // Her tælles hvor mange gange hver ting findes i listen, og gemmer resultatet i counts
+  Map<String, Double>supports=computeSupport(Counts),
+    items.size()); // Den beregner, hvor stor en andel (support) hver ting udgør af det samlede antal i listen.
+  return filterByMinSupport(supports); // Den sender listen med support-tal videre og returnerer kun de ting, der har højt nok support.
+} 
+// Eksempel på brug
+  public static void main(String[] args) {
+    List<String> items = Arrays.asList( // Der laves en liste med 10 elementer (stjernetegn). Listen fungerer som data, som algoritmen skal analysere.
+      "Fisk","Vægten","Fisk","Jomfru","Fisk",
+      "Skytte","Jomfru","Vægten","Skytte","Fisk"
+    ); // 10 elementer i alt
+
+    Apriori a = new Apriori(0.2); //Opretter et Apriori-objekt, hvor 0.2 betyder, at minimumsgrænsen (minSupport) for at et element regnes som “hyppigt” er 20 % (altså skal det optræde i mindst 2 ud af 10 tilfælde).
+    Map<String, Double> frequent = a.findFrequentItemsWithMinSupport(items); // Programmet kalder metoden, som finder alle elementer i listen, der optræder oftere end 20 %.
+
+    System.out.println("Frekvens (count): " + a.findFrequentItems(items)); // Viser hvor mange gange hvert element (fx “Fisk”, “Jomfru” osv.) optræder i listen.
+    System.out.println("Support (procent): "); // Hvor stor en procentdel hvert element udgør af det samlede datasæt
+    for (Map.Entry<String, Double> e : a.computeSupport(a.findFrequentItems(items), items.size()).entrySet()) { // Går igennem alle elementer i et “map”, der indeholder hvert element og dets beregnede support-værdi (fx “Fisk” → 0.5).
+      System.out.printf("  %s: %.2f%n", e.getKey(), e.getValue());
+    }
+
+    System.out.println("Elementer med support >= " + a.minSupport + ": " + frequent);
+  }
+}
