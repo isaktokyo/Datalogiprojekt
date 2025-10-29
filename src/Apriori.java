@@ -52,49 +52,49 @@ public Map<String, Double> //metoden giver et map tilbage, hvor hver ting (Strin
 
 //vi starter med confidence delen
 //beregn support for alle 2-item kombinationer (altså hvor ofte 2 ting optræder sammen)
-public Map<Set<String>, Double> computePairSupport(List<List<String>> transactions) {
-  Map<Set<String>,Integer> pairCounts = new HashMap<>();
-  int totalTransactions = treansactions.size();
+public Map<Set<String>, Double> computePairSupport(List<List<String>> transactions) { //beregner hvor ofte par stjernetegn forekommer blandt seriemordere; nøglen(stjerntegney); værdien(double)viser supporten
+  Map<Set<String>,Integer> pairCounts = new HashMap<>(); //tæller hvor mange gange hvert par forekommer
+  int totalTransactions = treansactions.size(); //tæller hvor mange mordere der er i alt, gemmer det samlet antal seriemordere i variablen "total transasctions"
 
-  for (List<String> t : transactions) {
-    for (int i = 0; i < t.size(); i++) {
-      for (int j = i + 1; j < t.size(); j++) {
-        Set<String> pair = new HashSet<>();
-        pair.add(t.get(i));
+  for (List<String> t : transactions) { //går igennem hver seriemorder i listen "transactions"; t: 1 seriemorders data
+    for (int i = 0; i < t.size(); i++) { //starter en yderste løkke, der gennemgår alle elementer i morderens liste, i er positionen for det første mulige par
+      for (int j = i + 1; j < t.size(); j++) { //indre løkke, laver par mellem i og j, laver i+1 så man ikke laver det samme 2 gange
+        Set<String> pair = new HashSet<>(); //oprettes nyt tomt sæt, som skal indeholde 2 stjernetegn
+        pair.add(t.get(i));//henter de 2 elementer fra morder listen r og tilføjer til sættet
         pair.add(t.get(j));
-        pairCounts.put(pair, pairCounts.getOrDefault(pair, 0) + 1);
+        pairCounts.put(pair, pairCounts.getOrDefault(pair, 0) + 1); //opdateres tællingen hvor mange gange det blevet set + lægges 1 til hvis man har set parret 1 gang til
       }
     }
   }
 
-  Map<Set<String>, Double> pairSupport = new HashMap<>();
-  for (Map.Entry<Set<String> Integer> e : pairCounts.entrySet()) {
-    pairSupport.put(e.getKey(), (double) e.getValue() / totalTransactions);
+  Map<Set<String>, Double> pairSupport = new HashMap<>(); //nyt map, hvor resultatet gemmes, nøglen sæt med 2 stjernetegn + support værdien hvor stor en andel af morderene har den kombi
+  for (Map.Entry<Set<String>, Integer> e : pairCounts.entrySet()) { //paircounts er hvor mange gange stjernetegnene er set
+    pairSupport.put(e.getKey(), (double) e.getValue() / totalTransactions);//beregner support værdien for hvert par og gemmer det i nyt map
   }
 
   return pairSupport;
 }
 
-public Map<String, Double> computeConfidence(
-  Map<SetzString>, Double>pairSupport,
-  Map<String, Double> singleSupport) {
-  Map <String, Double> confidence = new HashMap<>();
+public Map<String, Double> computeConfidence( //de næste 3 linjer er metodens hoved, tager i mod 2 maps: pair support hvor en andel af mordere der har et bestemt par af stjernetegn
+  Map<Set<String>, Double>pairSupport,//forsættelse: singleSupport: hvor stor en andel der har et stjernetegn
+  Map<String, Double> singleSupport) { 
+  Map <String, Double> confidence = new HashMap<>();//opretter nyt tomt map, hvor resultaterne gemmes
 
-  for (Map.Entry<Set<String>, Double> e : pairSupport,entrySet()) {
-    List<String> items = new ArrayList<>(e.getKey());
-    if (items.size() == 2) {
-      String A = items.get(0);
+  for (Map.Entry<Set<String>, Double> e : pairSupport.entrySet()) { //går igennem hvert par og dets supportværdi
+    List<String> items = new ArrayList<>(e.getKey()); //liste ud af parrene
+    if (items.size() == 2) { //tjekker den har 2 elementer (et par)
+      String A = items.get(0);//disse to er de 2 elementer i parret a og b
       String B = items.get(1);
 
-      double supportAB = e.getValue();
-      double supportA = singleSupport.getOrDefault(A, 0.0);
-      double supportB = singleSupport.getOrDefault(B, 0.0); 
+      double supportAB = e.getValue(); //gemmer support værdien for a og b, hvor ofte de forekommer sammen
+      double supportA = singleSupport.getOrDefault(A, 0.0); //de næste to: henter support værdien for hver stjernetegn fra single support
+      double supportB = singleSupport.getOrDefault(B, 0.0); //get.. betyder hvis stjernetegnet ikke findes i map så brug 0 som standardværdi
 
-      if (supportA > 0) confidence.put(A + " → " + B, supportAB/ supportA);
-      if (supportB > 0) confidence.put(B+ " → " + A, supportAB / support B);
+      if (supportA > 0) confidence.put(A + " → " + B, supportAB/ supportA); //kernen af beregning: så de 2 regler udregnes for hvert par support (a,b)/support(a) og den anden med (b)
+      if (supportB > 0) confidence.put(B + " → " + A, supportAB / support B); //begge regler bliver lagt i confidence mappet med tekst som nøgler
       }
     }
-  return confidence;
+  return confidence; //returnere hele confidence map som nu har alle sammenhænge
   }
 
   
