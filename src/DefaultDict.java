@@ -18,7 +18,7 @@ public class DefaultDict<K, V> extends HashMap<K, V> {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            this.put((K) key, returnValue);
+            this.put((K)key, returnValue);
         }
         return returnValue;
     }
