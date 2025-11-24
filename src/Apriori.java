@@ -24,7 +24,7 @@ return freq; //så beder vi den om at returnere resultatet (fisk=4 eller jomfru=
 public Map<String, Double> computeSupport(Map<String, Integer> freq, int total) { //her bliver der lavet liste over hvor mange gange hvert element forekommer+samlet antal +laver nyt map
 Map<String, Double> support = new HashMap<>(); //laver tom map som gemmer hvert elements navn+dens support tal
   if (total <=0) return support;
-  for (Map. Entry<String, Integer> e : freq.entrySet()) { //den starter en for loop og kører igennem navn og antal
+  for (Map.Entry<String, Integer> e : freq.entrySet()) { //den starter en for loop og kører igennem navn og antal
     support.put(e.getKey(), (double) e. getValue() / total); //den regner hvor stor hver del fylder og gemmer det i en liste 
   }
     return support;
@@ -41,10 +41,9 @@ public Map<String, Double> filterByMinSupport(Map<String, Double> supportMap) { 
 }
 
 public Map<String, Double> //metoden giver et map tilbage, hvor hver ting (String) har et tal med komma (Double) koblet til sig.
-  findFrequentItemsWithMinSupoort(List<String>items) { // Den får en liste af ting og returnerer dem, der optræder ofte nok ud fra den fastsatte minimumsgrænse.
+  findFrequentItemsWithMinSupport(List<String>items) { // Den får en liste af ting og returnerer dem, der optræder ofte nok ud fra den fastsatte minimumsgrænse.
   Map<String, Integer> counts=findFrequentItems(items); // Her tælles hvor mange gange hver ting findes i listen, og gemmer resultatet i counts
-  Map<String, Double>supports=computeSupport(counts),
-    items.size()); // Den beregner, hvor stor en andel (support) hver ting udgør af det samlede antal i listen.
+  Map<String, Double>supports=computeSupport(counts, items.size()); // Den beregner, hvor stor en andel (support) hver ting udgør af det samlede antal i listen.
   return filterByMinSupport(supports); // Den sender listen med support-tal videre og returnerer kun de ting, der har højt nok support.
 } 
 
@@ -54,7 +53,7 @@ public Map<String, Double> //metoden giver et map tilbage, hvor hver ting (Strin
 //beregn support for alle 2-item kombinationer (altså hvor ofte 2 ting optræder sammen)
 public Map<Set<String>, Double> computePairSupport(List<List<String>> transactions) { //beregner hvor ofte par stjernetegn forekommer blandt seriemordere; nøglen(stjerntegney); værdien(double)viser supporten
   Map<Set<String>,Integer> pairCounts = new HashMap<>(); //tæller hvor mange gange hvert par forekommer
-  int totalTransactions = treansactions.size(); //tæller hvor mange mordere der er i alt, gemmer det samlet antal seriemordere i variablen "total transasctions"
+  int totalTransactions = transactions.size(); //tæller hvor mange mordere der er i alt, gemmer det samlet antal seriemordere i variablen "total transasctions"
 
   for (List<String> t : transactions) { //går igennem hver seriemorder i listen "transactions"; t: 1 seriemorders data
     for (int i = 0; i < t.size(); i++) { //starter en yderste løkke, der gennemgår alle elementer i morderens liste, i er positionen for det første mulige par
@@ -91,7 +90,7 @@ public Map<String, Double> computeConfidence( //de næste 3 linjer er metodens h
       double supportB = singleSupport.getOrDefault(B, 0.0); //get.. betyder hvis stjernetegnet ikke findes i map så brug 0 som standardværdi
 
       if (supportA > 0) confidence.put(A + " → " + B, supportAB/ supportA); //kernen af beregning: så de 2 regler udregnes for hvert par support (a,b)/support(a) og den anden med (b)
-      if (supportB > 0) confidence.put(B + " → " + A, supportAB / support B); //begge regler bliver lagt i confidence mappet med tekst som nøgler
+      if (supportB > 0) confidence.put(B + " → " + A, supportAB / supportB); //begge regler bliver lagt i confidence mappet med tekst som nøgler
       }
     }
   return confidence; //returnere hele confidence map som nu har alle sammenhænge
