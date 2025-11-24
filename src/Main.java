@@ -1,10 +1,7 @@
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static java.lang.reflect.Array.set;
 
 public class Main {
 
@@ -13,42 +10,47 @@ public class Main {
 
     public void Apriori(Set<String> kandidat) {
         String dbPath = "identifier.sqlite";
-        List<String> lines = indlaesData.getSunSignFromDB(dbPath);
-        DefaultDict<Integer, List<Integer>> item_counts =
-                new DefaultDict<Integer, List<Integer>>(ArrayList.class); // dette er en python metode,
+        List<String> dates = indlaesData.getSunSignFromDB(dbPath);
+        DefaultDict<Integer, List<Integer>> item_counts = new DefaultDict<Integer, List<Integer>>(ArrayList.class); // dette er en python metode,
         // Som vi har overført til java. Vi har lånt det.
-        DefaultDict<Integer, List<Integer>> pair_counts =
-                new DefaultDict<Integer, List<Integer>>(ArrayList.class);
+
+        List<String> signList = new ArrayList<>();
+        for (String line : dates) {
+        String sign = TilStjernetegn1.findStjernetegn(line);
+        signList.add(sign);
+        }
 
         // first pass
-        for (String line : lines) {//find candidate items
+        for (String line : dates) {//find candidate items
             for (String item : line.split(",")) {
                 item_counts.get(item).add(1);
             }
-          /*  String sign = TilStjernetegn1.findStjernetegn(line);
-            System.out.println(line + " → " + sign);
-            System.out.println(item_counts);*/
+            System.out.println("frekvens af stjernetegn (first pass): "+item_counts);
         }
-        /*
-        Object frequent_items = set();
-        for(){}
-*/
-        System.out.println(item_counts);
-        for (String line : lines) {
-            item_counts.get(1).add(Integer.parseInt(line));
-            System.out.println(item_counts);
+       Set<ArrayList<String>> item_sets = genererKombs.generer(dates.toArray(new String[dates.size()]), 2);
+        System.out.println(item_sets);
+    }
+    public double supportWall(double customThreshold) {
+        // denne metode skal afgrænse hvor meget support
+        // der skal være for en link mellom to datapunkter. F eks: morder - fisk.
+        // den tager input i main (customThreshold)
+        double defaultThreshold = 0.75;
+        if (customThreshold > 0 && customThreshold <= 1) {
+            return customThreshold;
+        }else {
+            return defaultThreshold;
+            }
+      }
+
+    public double findSupport(List<String> dataset, String item) { // Logik til at se forekomster af item / totalt antal elementer i datasættet
+        int count = 0;
+        for (String line : dataset) {
+            if (line.contains(item)) { // hvis søgeordet findes, tælles det
+                count++;
+            }
         }
+        return (double) count / dataset.size();
     }
-
-    public double supportWall() { // denne metode skal afgrænse hvor meget support
-        // der skal være for en link mellom to datapunkter. F eks: morder - fisk
-        double threshold = 0.75;
-        return threshold;
-    }
-
-    public double findSupport() {
-        return 0;
-    }// returnvalue er bare en placeholder
 
     // en main som initierer visualiseringen og de forskellige metoder.
     public static void main(String[] args) {
@@ -64,7 +66,7 @@ public class Main {
         m.Apriori(new HashSet<>());
 
         String[] arr = {"hey", "i", "just", "met", "you"};
-        int r = 3;
+        int r = 4;
         Set<ArrayList<String>> resultat = genererKombs.generer(arr, r);
         for (List<String> comb : resultat) {
             for (String carly : comb) {
@@ -72,5 +74,31 @@ public class Main {
             }
             System.out.println();
         }
+        // dummy datasæt
+        List<String> dataset = new ArrayList<>();
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+        dataset.add("Morder, Fisk");
+
+
+        // Find support for "morder"
+        //beregner sandsynligheden for om ordet 'morder'optræder i dataslttet
+        String searchedItem = "Fisk";
+        double support = m.findSupport(dataset, searchedItem);
+        System.out.println("Support for " + searchedItem + ": " + support);
+
+        // Bruger threshold for at evaluere 'vigtigheden'
+        double threshold = m.supportWall(0.6);
+        // her har vi vores brugerdefinerede værdi der sammenligner og derved afgøre en hyppighed
+        if (support > threshold) {
+            System.out.println("kombinationen ' " + searchedItem + " ' er hyppig.");
+        } else {
+            System.out.println("Kombinationen ' " + searchedItem + " ' er ikke hyppig.");
+        } // ved sammenligningen af support med threshold, afgøres hyppigheden af et item
     }
 }

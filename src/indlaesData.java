@@ -5,7 +5,7 @@ import java.util.List;
 public class indlaesData{
     public static List<String> getSunSignFromDB(String dbPath){
         List<String> fødsler =  new ArrayList<>();
-        Connection conn = null; // dette er bare kode fra forelæsningen. det skal fungere at hente fra sqlite filen
+        Connection conn = null; //  henter ind data fra sqlite filen
         try {
             String url = "jdbc:sqlite:"+dbPath;
             conn = DriverManager.getConnection(url);
@@ -18,6 +18,7 @@ public class indlaesData{
                 String fødsel = rs.getString("fødsel");
                 String comment = rs.getString("comment");
                 System.out.println(navn + " | " + fødsel + " | " + comment);
+                fødsler.add(fødsel);
             }
         } catch (SQLException e) {
             throw new Error("Problem", e);
