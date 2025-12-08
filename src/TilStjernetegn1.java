@@ -1,20 +1,20 @@
 
 public class TilStjernetegn1 {
 
-    private static String findStjernetegn(int dag, int maaned) {
-        if ((maaned == 3 && dag >= 21) || (maaned == 4 && dag <= 19)) return "Vædder";
-        if ((maaned == 4 && dag >= 20) || (maaned == 5 && dag <= 20)) return "Tyr";
-        if ((maaned == 5 && dag >= 21) || (maaned == 6 && dag <= 20)) return "Tvilling";
-        if ((maaned == 6 && dag >= 21) || (maaned == 7 && dag <= 22)) return "Krebs";
-        if ((maaned == 7 && dag >= 23) || (maaned == 8 && dag <= 22)) return "Løve";
-        if ((maaned == 8 && dag >= 23) || (maaned == 9 && dag <= 22)) return "Jomfru";
-        if ((maaned == 9 && dag >= 23) || (maaned == 10 && dag <= 22)) return "Vægt";
-        if ((maaned == 10 && dag >= 23) || (maaned == 11 && dag <= 21)) return "Skorpion";
-        if ((maaned == 11 && dag >= 22) || (maaned == 12 && dag <= 21)) return "Skytte";
-        if ((maaned == 12 && dag >= 22) || (maaned == 1 && dag <= 19)) return "Stenbuk";
-        if ((maaned == 1 && dag >= 20) || (maaned == 2 && dag <= 18)) return "Vandmand";
-        if ((maaned == 2 && dag >= 19) || (maaned == 3 && dag <= 20)) return "Fisk";
-        return "Ukendt";
+    public static Integer findStjernetegn(int dag, int maaned) {
+        if ((maaned == 3 && dag >= 21) || (maaned == 4 && dag <= 19)) return 0; // Vædder
+        if ((maaned == 4 && dag >= 20) || (maaned == 5 && dag <= 20)) return 1; // Tyr
+        if ((maaned == 5 && dag >= 21) || (maaned == 6 && dag <= 20)) return 2; // Tvilling
+        if ((maaned == 6 && dag >= 21) || (maaned == 7 && dag <= 22)) return 3; // Krebs
+        if ((maaned == 7 && dag >= 23) || (maaned == 8 && dag <= 22)) return 4; // Løve
+        if ((maaned == 8 && dag >= 23) || (maaned == 9 && dag <= 22)) return 5; // Jomfru
+        if ((maaned == 9 && dag >= 23) || (maaned == 10 && dag <= 22)) return 6; // Vægt
+        if ((maaned == 10 && dag >= 23) || (maaned == 11 && dag <= 21)) return 7; // Skorpion
+        if ((maaned == 11 && dag >= 22) || (maaned == 12 && dag <= 21)) return 8; // Skytte
+        if ((maaned == 12 && dag >= 22) || (maaned == 1 && dag <= 19)) return 9; // Stenbuk
+        if ((maaned == 1 && dag >= 20) || (maaned == 2 && dag <= 18)) return 10; // Vandmand
+        if ((maaned == 2 && dag >= 19) || (maaned == 3 && dag <= 20)) return 11; // Fisk
+        return -1; // Ukendt
     }
     int dag; int maaned;
     public void getStjernetegn(int dag, int maaned) {
@@ -22,8 +22,8 @@ public class TilStjernetegn1 {
         this.maaned = maaned;
     }
 
-    public static String findStjernetegn(String fødselString){
-        if(fødselString.length()<4)return "Ukendt";
+    public static Integer findStjernetegn(String fødselString){
+        if(fødselString.length()<4)return -1;
         int dag=Integer.parseInt(fødselString.substring(0,2));
         int maaned=Integer.parseInt(fødselString.substring(2,4));
         return findStjernetegn(dag,maaned);
