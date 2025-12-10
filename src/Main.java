@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+/*import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,14 +14,14 @@ public class Main {
         DefaultDict<Integer, List<Integer>> item_counts = new DefaultDict<Integer, List<Integer>>(ArrayList.class); // dette er en python metode,
         // Som vi har overført til java. Vi har lånt det.
 
-        List<String> signList = new ArrayList<>();
+        List<Integer> signList = new ArrayList<>();
         for (String line : dates) {
-        String sign = TilStjernetegn1.findStjernetegn(line);
+        Integer sign = TilStjernetegn1.findStjernetegn(line);
         signList.add(sign);
         }
 
         // first pass
-        for (String line : dates) {//find candidate items
+        for (String line : dates) {//find candidate item
             for (String item : line.split(",")) {
                 item_counts.get(item).add(1);
             }
@@ -55,9 +55,9 @@ public class Main {
     // en main som initierer visualiseringen og de forskellige metoder.
     public static void main(String[] args) {
         String dbPath = "identifier.sqlite";
-        List<String> datoer = indlaesData.getSunSignFromDB(dbPath);
+        List<Integer> datoer = indlaesData.getSunSignFromDB(dbPath);
 
-        for (String dato : datoer) {
+        for (Integer dato : datoer) {
             String sign = TilStjernetegn1.findStjernetegn(dato);
             System.out.println(dato + " → " + sign);
         }
@@ -102,3 +102,4 @@ public class Main {
         } // ved sammenligningen af support med threshold, afgøres hyppigheden af et item
     }
 }
+*/

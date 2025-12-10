@@ -1,12 +1,7 @@
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
-
+import java.util.*;
 
 public class WebScrape {
-    public static Map<String, WebScrape.MorderDatapunkt> alleMordereMap = new HashMap<>();
+    public static Map<String, MorderDatapunkt> alleMordereMap = new HashMap<>();
 
     public static class MorderDatapunkt {
         String navn;
@@ -108,8 +103,6 @@ public class WebScrape {
         //System.out.println("addToMap: nøkkel=" + key + " navn='" + navn + "' motiv=" + motiv + " type=" + type + " fødsels=" + fødselsdag);
     }
 
-
-
     public static ArrayList<String> filter(ArrayList<String> råData) {
         // filtrere ut første kolonne: serial killer name, profile image, eller position
         // filtrere ut https-link (sker i CSVReader), motivation
@@ -117,6 +110,7 @@ public class WebScrape {
         råData.removeIf(s -> s.contains("position"));
         råData.removeIf(s -> s.contains("serial killer name"));
         råData.removeIf(s -> s.contains("profile image"));
+        råData.removeIf(s -> s.contains("Template:Serial Killer Infobox/doc"));
 
         return råData; // vi ønsker at returnere denne data
     }
@@ -130,11 +124,48 @@ public class WebScrape {
                 String ddmm = dato.substring(0, 5);
                 ddmm = ddmm.replace("/", ""); // for at fodre fødselsdato til "TilStjernetegn" skal vi kun have to siffer til dag, og to til maned
 
-                int dd=Integer.parseInt(ddmm.substring(0,3));
-                int mm=Integer.parseInt(ddmm.substring(2,4));
+                int mm = Integer.parseInt(ddmm.substring(0, 3));
+                int dd = Integer.parseInt(ddmm.substring(2, 4));
 
                 addToMap(map,navn, null, null, ddmm);
             }
+        }
+    }
+
+    public static void tilskrivStjernetegnTilAlle() {
+
+        for (MorderDatapunkt m : alleMordereMap.values()) {
+            Integer sign = -1;
+            Integer d = m.getDag();     // kan være -1 for "ikke sat"
+            Integer mm = m.getMåned();
+            boolean hasDay = d != null && d > 0; // vi bruger booleans for at undersøge om datapunkterne har opgivede dage eller ikke.
+            boolean hasMonth = mm != null && mm > 0 && mm <= 12;
+
+            if (hasDay && hasMonth) {
+                sign = TilStjernetegn1.findStjernetegn(d, mm);
+            } else if (m.fødselsdag != null && m.fødselsdag.length() >= 4 && !m.fødselsdag.equals("Ikke sat endnu")) {
+                // efter nogen bugs bruger vi dette fallback: vi bruger de første 4 tegn (ddMM) hvis de findes og er parseable
+                try {
+                    String ddmm = m.fødselsdag.substring(0, 4);
+                    int parsedDag = Integer.parseInt(ddmm.substring(0, 2));
+                    int parsedMaaned = Integer.parseInt(ddmm.substring(2, 4));
+                    sign = TilStjernetegn1.findStjernetegn(parsedDag, parsedMaaned); // vi laver int ud af substrings i fødselsdatoer, og fodrer TilStjernetegn1
+                    if (!hasDay) m.dag = parsedDag;
+                    if (!hasMonth) m.maaned = parsedMaaned;
+                } catch (Exception ignored) {
+                    sign = -1; // vi falder tilbage på -1 hvis man ikke finder en værdi.
+                }
+            } else if (!hasDay && hasMonth) {
+                // hvis vi mangler dag men måned findes setter vi dag til den 15.
+                int setDay = 15;
+                m.dag = setDay;
+                m.maaned = mm;
+                m.fødselsdag = String.format("%02d%02d", setDay, mm);
+                sign = TilStjernetegn1.findStjernetegn(setDay, mm);
+            } else {
+                sign = -1;
+            }
+            m.setStjernetegn(sign); //
         }
     }
     // Motivation:
@@ -150,8 +181,103 @@ public class WebScrape {
     // ikke-organiseret = 1
     // mixed = 2
 
+    // Dette er mappede navn for alle stjernetegn fra 0 til 11 (svarer til TilStjernetegn1-classen)
+    private static final String[] stjernetegnString = { // dette er for outputtets skyld
+            "Vædder", "Tyr", "Tvilling", "Krebs", "Løve", "Jomfru",
+            "Vægt", "Skorpion", "Skytte", "Stenbuk", "Vandmand", "Fisk"
+    };
 
-    public static void main(String[] args) {
+    public static Set<Set<AprioriAggreval1.item>> transactionBuilder() { // her laves transactions ved brug af alleMordereMap i WebScraper
+        // For at det skal virke skal man køre WebScrape først, så den har data.
+        if (alleMordereMap == null || alleMordereMap.isEmpty()) {
+            if (alleMordereMap.isEmpty()) {
+                loadData();
+            }
+        }
+        tilskrivStjernetegnTilAlle();// Vi tilskriver stjernetegn først
+
+        Set<Set<AprioriAggreval1.item>> txs = new HashSet<>();
+        for (MorderDatapunkt m : alleMordereMap.values()) {
+            Set<AprioriAggreval1.item> t = new HashSet<>(); // vi initierer et tomt itemset som fyldes med motiv, type og stjernetegn.
+
+            // Motiv
+            if (m.motiv != null && m.motiv >= 0) { // disse checks måtte til, fordi det er inkonsekvent data.
+                t.add(new AprioriAggreval1.item("motiv=" + m.motiv));
+            } else {
+                t.add(new AprioriAggreval1.item("motiv=ukendt")); // vi giver værdien ukendt i tilfælde vi ikke finder en anden værdi
+            }
+
+            // Type (organiseret/uan)
+            if (m.type != null && m.type >= 0) {
+                t.add(new AprioriAggreval1.item("type=" + m.type));
+            } else {
+                t.add(new AprioriAggreval1.item("type=ukendt"));
+            }
+
+            // Stjernetegn (integer)
+            Integer z = m.getStjernetegn();
+            if (z != null && z >= 0 && z < 12) {
+                t.add(new AprioriAggreval1.item("stjernetegn=" + z));
+                // også legg til lesbart navn (valgfritt)
+                t.add(new AprioriAggreval1.item("stjernetegn_navn=" + stjernetegnString[z]));
+            } else {
+                t.add(new AprioriAggreval1.item("stjernetegn=ukendt"));
+            }
+
+            // Måned (hvis tilgjængelig)
+            Integer mm = m.getMåned();
+            if (mm != null && mm > 0 && mm <= 12) {
+                t.add(new AprioriAggreval1.item("maaned=" + mm));
+            } else {
+                t.add(new AprioriAggreval1.item("maaned=ukendt"));
+            }
+
+            // Dag kendt/ukendt
+            Integer dd = m.getDag();
+            if (dd != null && dd > 0) {
+                t.add(new AprioriAggreval1.item("dag_kendt=true"));
+            } else {
+                t.add(new AprioriAggreval1.item("dag_kendt=false"));
+            }
+            txs.add(t);
+        }
+        return txs;
+    }
+
+    // med tanke på single responsibility principle flyttet vi denne funktion over i en egen metode, istedenfor i loadData.
+    // Vi vil konvertere ArrayList<alleMordere> til en List<List<Integer>> for at få mindre tematik over i selve apriori.
+    public static List<List<Integer>> convertToBinary(Set<Set<AprioriAggreval1.item>> txs) {
+
+        List<Integer> alleMuligeItems = List.of();// 21 items
+        alleMuligeItems.addAll(Collections.nCopies(21, 0)); //vi initierer en liste med n mengder af o-værdier. kilde: https://www.geeksforgeeks.org/java/collections-ncopies-method-in-java/
+        int alleItems = alleMuligeItems.size();
+        List<List<Integer>> result = new ArrayList<>();
+
+        for (MorderDatapunkt m : alleMordereMap.values()) {
+            Vector vector = new Vector(alleItems); // kapasiteten til vektoren er sat til 21
+
+            if (m.getStjernetegn() >= 0 && m.getStjernetegn() <= 12) {
+                vector.set(m.getStjernetegn(), 1);
+            }
+            if (m.motiv >= 0 && m.motiv <= 3) {
+                vector.set(m.motiv + 12, 1); // setter riktig index direkte
+            }
+            if (m.type >= 0 && m.type <= 3) {
+                vector.set(m.type + 16, 1);
+            }
+            System.out.println(vector);
+            List newList = new ArrayList(vector);
+            result.add(newList);
+        }
+        return result;
+    }
+
+
+    static void main() {
+        loadData();
+    }
+
+    public static void loadData() { // pleide å være main
         CSVReader leser = new CSVReader();
         leser.run();
 
@@ -184,6 +310,7 @@ public class WebScrape {
             }
         }
         System.out.println(Missionkiller);
+
         System.out.println("--------------------Hedonistiske motiver-------------------------");
         ArrayList<String> Hedokiller = new ArrayList<>();
         ArrayList<String> råH1 = CSVReader.hedonisticData;
@@ -260,18 +387,45 @@ public class WebScrape {
             }
         }
         System.out.println(mixedkiller);
-        itererFodselsdager(alleMordereMap);
 
-        ArrayList<WebScrape.MorderDatapunkt> alleMordere = new ArrayList<>(alleMordereMap.values());
+        itererFodselsdager(alleMordereMap);
+        ArrayList<MorderDatapunkt> alleMordereFinal = new ArrayList<>();
+        ArrayList<MorderDatapunkt> alleMordere = new ArrayList<>(alleMordereMap.values());
+        int teller = 0;
         alleMordere.sort((p1, p2) -> p1.navn.compareTo(p2.navn)); // alfabetisk sortering. (https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html#sort(java.util.Comparator))
-        for(WebScrape.MorderDatapunkt morder : alleMordere) {
-            if (!morder.motiv.equals(-1) || !morder.fødselsdag.equals("Ikke sat endnu")) { // vi gidder ikke have data der ikke har motiv eller fødselsdag
+        for (MorderDatapunkt morder : alleMordere) {
+            if (!morder.motiv.equals(-1) || !morder.fødselsdag.equals("Ikke sat endnu")) {// vi gidder ikke have data der ikke har motiv eller fødselsdag
+                /// her genererer vi random motiv til de mordere der mangler, grundet inkonsistent data. REFERER til dette
+                // skal vi bruge randomData så?
+                // for at få denne apriori til at give noget meningsfyldt data til trods for vores mangel på motiv og type-data
+                // vil vi distubruere alle manglende motiv og typer ligeligt ud over de mulige værdier, så resultatet vil svare til en reel tendens hos dataen.
+                if (morder.motiv == -1) {
+                    int antallMotiv = 4;
+                    morder.motiv = teller % antallMotiv;
+                    teller++;
+                }
+
+                if (morder.type == -1) {  //  husk til rapportskrivning: vores overvejelser med at bruge random vs distribuere lige
+                    int antallType = 3;
+                    morder.type = teller % antallType;
+                    teller++;
+                }
+
                 System.out.println(morder); // vi printer alle datapunkter
+
+                alleMordereFinal.add(morder); // vi adder til endnu en arrayliste, der vil bruge værdier der ikke er -1.
                 System.out.println(morder.getDag() + " " + morder.getMåned());
             }
+
+
         }
-        System.out.println(alleMordere.size());
+        System.out.println(alleMordereFinal.size());
+        Set<Set<AprioriAggreval1.item>> txs = WebScrape.transactionBuilder();
+        System.out.println("Tx count = " + txs.size());
+        List<List<Integer>> convert = WebScrape.convertToBinary(txs);
+
+        System.out.println(convert);
     }
 }
-
+/// metode der laver vectorer ud i fra vores maps.
 
