@@ -57,7 +57,8 @@ public class WebScrape {
             //Fjerner anførselstegn
             name = name.replace("\"", "");
 
-            // for at bruge navn som en nøkkel, må rekkefølgen på navne fra fødselsdag og fra motiv være det samme
+            //
+            // todo kig på denne kode igen. hvad viser den/betyder den
             if (name.contains(",")) { // derfor gør vi om navne der står med efternavne først
                 String[] parts = name.split(",");
                 if (parts.length >= 2) {
