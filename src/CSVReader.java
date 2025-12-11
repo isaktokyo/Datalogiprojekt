@@ -64,9 +64,8 @@ public class CSVReader {
                         // fordi vores database er ukomplett.
 
                         råDataFøds.add(navn + ";;" + dato); // Lav midlertidig kombineret datapunkt
+                        }
                     }
-                    }
-
                 } catch (IOException io) {
                 System.out.println(io);
             }
@@ -91,15 +90,12 @@ public class CSVReader {
                     System.out.println(index);
                     line = line.substring(0, index-2); // vi fjerner alt efter index hvor https starter, og så to mere(nemlig et komma og mellemrum)
                     System.out.println(line);
-
                 }
                 // lægger line ind i listen
                     dataen.add(line);
-
             }
         } catch (IOException io) {
             System.out.println(io);
         }
-
     }
 }

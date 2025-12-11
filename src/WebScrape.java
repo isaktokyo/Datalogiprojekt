@@ -11,7 +11,6 @@ public class WebScrape {
         Integer dag = -1;
         Integer maaned  = -1;
         Integer stjernetegn = -1;
-        //Integer gender = -1;
 
         public MorderDatapunkt getMorderDatapunkt () {
             return MorderDatapunkt.this;
@@ -68,7 +67,8 @@ public class WebScrape {
             name = name.replaceAll("\\d+", "");        // fjern tall
 
             // Vi normaliserer whitespace
-            name = name.replaceAll("\\s+", " ").trim(); // dette er en
+            ///  skal vi have mellemrum i replacement
+            name = name.replaceAll("\\s+", " ").trim(); // dette er en todo
 
             // Lowercase for map-nøkkel
             return name.toLowerCase();
@@ -187,7 +187,7 @@ public class WebScrape {
             "Vægt", "Skorpion", "Skytte", "Stenbuk", "Vandmand", "Fisk"
     };
 
-    public static Set<Set<AprioriAggreval1.item>> transactionBuilder() { // her laves transactions ved brug af alleMordereMap i WebScraper
+    public static List<Set<Integer>> transactionBuilder() { // her laves transactions ved brug af alleMordereMap i WebScraper
         // For at det skal virke skal man køre WebScrape først, så den har data.
         if (alleMordereMap == null || alleMordereMap.isEmpty()) {
             if (alleMordereMap.isEmpty()) {
@@ -196,49 +196,26 @@ public class WebScrape {
         }
         tilskrivStjernetegnTilAlle();// Vi tilskriver stjernetegn først
 
-        Set<Set<AprioriAggreval1.item>> txs = new HashSet<>();
+        List<Set<Integer>> txs = new ArrayList<>();
         for (MorderDatapunkt m : alleMordereMap.values()) {
-            Set<AprioriAggreval1.item> t = new HashSet<>(); // vi initierer et tomt itemset som fyldes med motiv, type og stjernetegn.
-
-            // Motiv
-            if (m.motiv != null && m.motiv >= 0) { // disse checks måtte til, fordi det er inkonsekvent data.
-                t.add(new AprioriAggreval1.item("motiv=" + m.motiv));
-            } else {
-                t.add(new AprioriAggreval1.item("motiv=ukendt")); // vi giver værdien ukendt i tilfælde vi ikke finder en anden værdi
-            }
-
-            // Type (organiseret/uan)
-            if (m.type != null && m.type >= 0) {
-                t.add(new AprioriAggreval1.item("type=" + m.type));
-            } else {
-                t.add(new AprioriAggreval1.item("type=ukendt"));
-            }
+            Set<Integer> t = new HashSet<>(); // vi initierer et tomt itemset som fyldes med motiv, type og stjernetegn.
 
             // Stjernetegn (integer)
             Integer z = m.getStjernetegn();
             if (z != null && z >= 0 && z < 12) {
-                t.add(new AprioriAggreval1.item("stjernetegn=" + z));
+                t.add(z);
                 // også legg til lesbart navn (valgfritt)
-                t.add(new AprioriAggreval1.item("stjernetegn_navn=" + stjernetegnString[z]));
-            } else {
-                t.add(new AprioriAggreval1.item("stjernetegn=ukendt"));
+            }
+            // Motiv
+            if (m.motiv != null && m.motiv >= 0) { // disse checks måtte til, fordi det er inkonsekvent data.
+                t.add(12 + m.motiv);
             }
 
-            // Måned (hvis tilgjængelig)
-            Integer mm = m.getMåned();
-            if (mm != null && mm > 0 && mm <= 12) {
-                t.add(new AprioriAggreval1.item("maaned=" + mm));
-            } else {
-                t.add(new AprioriAggreval1.item("maaned=ukendt"));
+            // Type (organiseret/uan)
+            if (m.type != null && m.type >= 0) {
+                t.add(16 + m.type);
             }
 
-            // Dag kendt/ukendt
-            Integer dd = m.getDag();
-            if (dd != null && dd > 0) {
-                t.add(new AprioriAggreval1.item("dag_kendt=true"));
-            } else {
-                t.add(new AprioriAggreval1.item("dag_kendt=false"));
-            }
             txs.add(t);
         }
         return txs;
@@ -246,32 +223,48 @@ public class WebScrape {
 
     // med tanke på single responsibility principle flyttet vi denne funktion over i en egen metode, istedenfor i loadData.
     // Vi vil konvertere ArrayList<alleMordere> til en List<List<Integer>> for at få mindre tematik over i selve apriori.
-    public static List<List<Integer>> convertToBinary(Set<Set<AprioriAggreval1.item>> txs) {
-
-        List<Integer> alleMuligeItems = List.of();// 21 items
-        alleMuligeItems.addAll(Collections.nCopies(21, 0)); //vi initierer en liste med n mengder af o-værdier. kilde: https://www.geeksforgeeks.org/java/collections-ncopies-method-in-java/
-        int alleItems = alleMuligeItems.size();
+    public static List<List<Integer>> convertToBinary(List<Set<Integer>> txs) {
+        int alleItems =19;
         List<List<Integer>> result = new ArrayList<>();
 
         for (MorderDatapunkt m : alleMordereMap.values()) {
-            Vector vector = new Vector(alleItems); // kapasiteten til vektoren er sat til 21
+            List<Integer> vector = new ArrayList<>(Collections.nCopies(alleItems, 0));// kapasiteten til vektoren er sat til 21
 
-            if (m.getStjernetegn() >= 0 && m.getStjernetegn() <= 12) {
+            Integer s = m.getStjernetegn();
+
+            // for stjernetegn, motiv og type vil vi sætte vector-værdier hvis de ikke er 0, og indenfor range af det de skal være.
+            if (s!=0 && s >= 0 && s< 12) {
                 vector.set(m.getStjernetegn(), 1);
             }
-            if (m.motiv >= 0 && m.motiv <= 3) {
-                vector.set(m.motiv + 12, 1); // setter riktig index direkte
+            if (m.motiv != null && m.motiv >= 0 && m.motiv <= 3) {
+                vector.set(m.motiv + 12, 1); // setter den korrekte index ind direkte
             }
-            if (m.type >= 0 && m.type <= 3) {
+            if (m.type != null && m.type >= 0 && m.type <= 3) {
                 vector.set(m.type + 16, 1);
             }
             System.out.println(vector);
-            List newList = new ArrayList(vector);
-            result.add(newList);
+
+            result.add(vector);
         }
         return result;
     }
+    public static List<Set<Integer>> convertBinaryToTransactions(List<List<Integer>> binaryList) {
 
+        List<Set<Integer>> transacts = new ArrayList<>();
+
+        for (List<Integer> vector : binaryList) {
+
+            Set<Integer> tx = new HashSet<>();
+
+            for (int i = 0; i < vector.size(); i++) {
+                if (vector.get(i) == 1) {
+                    tx.add(i);
+                }
+            }
+            transacts.add(tx);
+        }
+        return transacts;
+    }
 
     static void main() {
         loadData();
@@ -411,21 +404,49 @@ public class WebScrape {
                     teller++;
                 }
 
-                System.out.println(morder); // vi printer alle datapunkter
+               // System.out.println(morder); // vi printer alle datapunkter
 
                 alleMordereFinal.add(morder); // vi adder til endnu en arrayliste, der vil bruge værdier der ikke er -1.
-                System.out.println(morder.getDag() + " " + morder.getMåned());
+             //   System.out.println(morder.getDag() + " " + morder.getMåned());
             }
-
-
         }
         System.out.println(alleMordereFinal.size());
-        Set<Set<AprioriAggreval1.item>> txs = WebScrape.transactionBuilder();
+        List<Set<Integer>> txs = WebScrape.transactionBuilder();
         System.out.println("Tx count = " + txs.size());
         List<List<Integer>> convert = WebScrape.convertToBinary(txs);
 
         System.out.println(convert);
+        List<Set<Integer>> transactions = convertBinaryToTransactions(convert);
+
+       AprioriAggreval1 apriori = new AprioriAggreval1(transactions);
+        apriori.Apriori();
+
+        List<Set<Integer>> resultat = apriori.getAggreval();
+        System.out.println(resultat);
+        Map<Set<Integer>, Double> groupSup = apriori.allSetsSupport();
+
+        // vi bruger entry-klassen som en måde at hænte verdier fra en given nøgle i mappet groupSup
+        // kilde: https://stackoverflow.com/questions/8689725/map-entry-how-to-use-it
+        List<Set<Integer>> f1 = AprioriAggreval1.F1;
+        List<Set<Integer>> f2 = AprioriAggreval1.F2;
+        List<Set<Integer>> f3 = AprioriAggreval1.F3;
+
+        System.out.println("F1:"); // vi printer first pass med support
+        for (Set<Integer> f : f1) {
+            System.out.println(f + " -> " + String.format("%.2f", apriori.support(f)));
+        }
+        System.out.println("F2:"); // vi printer second pass med support
+        for (Set<Integer> f : f2) {
+
+            /// todo: lav en if-sætning som ikke lader de samme to items vises to gange f eks [16, 15] og [15, 16]
+            System.out.println(f + " -> " + String.format("%.2f", apriori.support(f)));
+        }
+        ///  dette output består ikke af 3 forskellige elementer, hvorfor?
+        System.out.println("F3:"); // vi printer third pass med support
+        for (Set<Integer> f : f3) {
+            System.out.println(f + " -> " + String.format("%.2f", apriori.support(f)));
+        }
+        /// todo vi må forstærke stjernetegn i dataen, da de ikke når over minsup nogen gang.
     }
 }
-/// metode der laver vectorer ud i fra vores maps.
 

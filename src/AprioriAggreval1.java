@@ -1,76 +1,97 @@
- import java.util.*;
-    public class AprioriAggreval1 {
+import java.util.*;
 
-    static Vector<String> new_candidates;
-    static Vector<Double> supports;
-    private static double minsup;
+import static java.util.Collections.sort;
 
-    // skal item hede item ?
-    public static class item { // vi laver objektet item (attributter) + deres sub-attributter
-        private final String name;
+public class AprioriAggreval1 {
 
-        public item(String name) {
-            this.name = name;
-        }
+    private final List<Set<Integer>> transactions;
+    private static final Set<Set<Integer>> frequentItemsets = new HashSet<>();
+    private final double minsup;
 
-        // hvis et givent objekt fremgår to gang, så er de den samme item
-        // TODO vi kan evt. slette den her snart hahahah hehehehe
-        @Override
-        public boolean equals(Object object) {
-            if (this == object) return true;
-            if (object == null || getClass() != object.getClass()) return false;
-            item item = (item) object;
-            return Objects.equals(name, item.name);
-        }
+    static List<Set<Integer>> F1 = new ArrayList<>();
+    static List<Set<Integer>> F2 = new ArrayList<>();
+    static List<Set<Integer>> F3 = new ArrayList<>();
 
-        @Override
-        public int hashCode() { // det er kun hashcode der virker, men ved ikke hvorfor/tror det er pga. equals på linje 14
-            return Objects.hash(name);
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
+    public AprioriAggreval1(List<Set<Integer>> transactions) {
+        this.transactions =transactions;
+        minsup = 0.05; // default
     }
-
-    // liste af item/attributter for hver morderprofil / vores transaktioner
-    private Set<Set<item>> transactions;
-    // holder på vores mest hyppige sets
-    private Set<Set<item>> frequentItemsets = new HashSet<>();
-
-    public AprioriAggreval1(Set<Set<item>> transactions, double minsup) {
-        this.transactions = transactions;
-        this.minsup = minsup;
-    }
-
-    // behold en ekstra constructor hvis noen kaller med kun transactions (som i noen tidligere versjoner)
-    public AprioriAggreval1(Set<Set<item>> transactions) {
-        this.transactions = transactions;
-        this.minsup = 0.05; // default
-    }
-
-    public Set<Set<item>> getAggreval() {
+    public List<Set<Integer>> getAggreval() {
         return transactions;
     }
 
     // ligesom isaks forrige men rettet til
-    public double support(Set<item> X) { // data mining bog side 98
+    public double support(Set<Integer> X) { // data mining bog side 98
         int count = 0;
         if (transactions == null || transactions.isEmpty()) return 0.0;
-        for (Set<item> t : transactions) {
+        for (Set<Integer> t : transactions) {
             if (t.containsAll(X)) {
                 count++;
             }
         }
-        return (double) count / transactions.size(); // her bruges support som fraktion (altså som procentdel og ikke heltal,
-        // men det er bare ud fra hvad jeg kan finde om ligningen. tror godt vi kan lave det om så det er heltal.)
+        return (double) count / transactions.size();
+    }
+    
+    // hjælpeklasser - vi skal måske ikke bruge dem, har bedt chat om at lave dem
+    // generate candidates - lavet ud fra github manden ifølge chat
+    private List<Set<Integer>> generateCandidates(List<Set<Integer>> Fk) {
+        List<List<Integer>> Ck1 = new ArrayList<>();
+
+        for (int i = 0; i < Fk.size(); i++) {
+            for (int j = i + 1; j < Fk.size(); j++) {
+
+                List<Integer> A =  new ArrayList<>(Fk.get(i)); // vi laver arraylists,
+                List<Integer> B =  new ArrayList<>(Fk.get(j)); // så vi kan bruge indeks af de forskellige lister.
+                // dette kan man nemligt ikke med HashSet, hvilket vores kode er baseret på.
+
+                // join kun hvis de første k-1 matcher
+                if (A.size() == 1 || prefixMatches(A, B)) {
+
+                    List<Integer> joined = new ArrayList<>(A);
+                    joined.add(B.get(B.size() - 1));
+
+                    if (!Ck1.contains(joined)) {
+                        Ck1.add(joined);
+                    }
+                }
+            }
+        }
+        List<Set<Integer>> Ckay = new ArrayList<>(); // vores metode returnerer List af set af integers.
+        for(List<Integer> Ck : Ck1) { // derfor skal vi iterere igennem Ck1,
+            Ckay.add(new HashSet<> (Ck)); // og caste indholdet tilbage til List af set af integer.
+        }
+        return Ckay;
+    }
+
+    // prefix matches, forstår ikke - men de hjælper til join step
+    private boolean prefixMatches(List<Integer> A, List<Integer> B) {
+        if (A.size() != B.size()) return false;
+
+        for (int i = 0; i < A.size() - 1; i++) {
+            if (!A.get(i).equals(B.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // github mandens måde at filtrere ud kandidater under minsup
+    private List<Set<Integer>> filterFrequent(List<Set<Integer>> Ck) {
+        List<Set<Integer>> Fk = new ArrayList<>(); // initierer Liste med itemsets med frequent candidates
+
+        for (Set<Integer> cand : Ck) {
+            double x = support(cand);
+            if(x>=minsup) {
+                Fk.add(cand);
+            }
+        }
+        return Fk;
     }
 
     // downward closure ifølge bogen Behold
-    private boolean allSubsetsFrequent(Set<item> candidate, Set<Set<item>> Fk) {
-        for (item removed : candidate) {
-            Set<item> subset = new HashSet<>(candidate);
+    private boolean allSubsetsFrequent(Set<Integer> candidate, List<Set<Integer>> Fk) {
+        for (Integer removed : candidate) {
+            Set<Integer> subset = new HashSet<>(candidate);
             subset.remove(removed);
 
             if (!Fk.contains(subset)) {
@@ -79,115 +100,73 @@
         }
         return true;
     }
+    public Map<Set<Integer>, Double> allSetsSupport() {
+        Map<Set<Integer>, Double> Support = new HashMap<>();
 
-    // selve apriori metoden
-    public Set<Set<item>> Apriori() {
-        //Support counting — beregne hvor ofte kandidater forekommer i transaksjonene.
+        for(Set<Integer> itemSet : frequentItemsets) { // vi vil finde første plads i et itemset
+            // og pladsen efter, og beregne deres support
+                double x = support(itemSet);
+                Support.put(itemSet, x);
+        }
+        return Support;
+    }
 
-            //Prune (beskære) — fjerne kandidater som ikke kan være frekvente fordi nogle av delmengderne ikke er frekvente
+    // selve apriori metoden (alt er apriori, men her knyttes ting sammen
+    public Set<Set<Integer>> Apriori() {
 
-            //Beholde kun de som oppfylder minsup, og lagre dem som Fk+1.
-
-            //Øge k og gentage til ingen flere frekvente sæt findes.
-
-        // først skal alle itemsets lige findes
-
-        ///  Vi beholder logikken nedenunder:
-        //Variablen F1 kan blive Eller Set<Vector<String>> F1 / Set<candidates>.
-
-        List<List<String>> transactionsAsStrings = new ArrayList<>();
-/*
-        for (Set<item> t : transactions) {
-            List<String> itemsAsString = new ArrayList<>();
-            for (item items : t) {
-
-                for (Set<item> t : transactions) {
-                    List<String> itemsAsString = new ArrayList<>();
-                    for (item item : t) {
-                        itemsAsStrings.add(item.toString());
-                    }
-                    transactionsAsStrings.add(itemsAsString);
-                }
-//laver alle C1 (de unikke items)
-                Set<String> allUniqueItems = new HashSet<>();
-                for (List<List<String>> t
-
-                Set<item> C1 = new HashSet<>();
-
-                for (Set<item> t : transactions) {
-                    C1.addAll(t);
-                }
-
-                // first pass (finder de hyppigste set)
-                Set<Vector<String>> F1 = new HashSet<>();
-                for (item i : C1) {
-                    Vector<item>
-
-                            single = Collections.singleton(i); // singleton er en instans af en klasse -
-                    // overvejer om vi skal bruge enum singeltons
-                    if (support(single) >= minsup) {
-                        F1.add(single);
-                    }
-                }
-                // Gem F1
-                frequentItemsets.addAll(F1);
-                return frequentItemsets;*/
-                Set<Set<item>> F = new HashSet<>();
-                return F;
-
-            }
-
-
-
-            // i denne metode iterer vi igennem WebScrape.alleMordereMap, og tildeler stjernetegn i form af Integer.
-            // vores data mangler nogen ganger fødselsdag til morderen, og har kun måned. Vi har derfor valgt at sætte dag til 15.
-
-            // dette er en iteration der viser os et bud på en main
-            public static void main (String[]args){
-                // vi bruger transactionBuilder til at bygge Byg transaktioner direkte fra WebScrape
-                Set<Set<item>> txs = WebScrape.transactionBuilder(); // vi lader txs være et set med itemssets
-
-            // Og oprætter en instans af AprioriAggreval1 med default minsup
-            AprioriAggreval1 ag = new AprioriAggreval1(txs, 0.05);
-
-                if (txs == null) {
-                    System.out.println("Byggede transaktioner: 0");
-                } else {
-                    System.out.println("Byggede transaktioner: " + txs.size());
-                }
-                int i = 0;
-                for (Set<item> t : txs) {
-                    System.out.println("Transaktion nr: " + (++i) + " : " + t);
-                    if (i >= 20) break;
-                }// denne løsning har vidst sig at ikke være særlig effektiv. Lige nu er det mere en demo, så derfor begrænser vi os til 20 transaktioner.
-
-                // Kører en enkel Apriori-pass (kan være dyrt hvis mange transaksjoner)
-                Set<Set<item>> frequent = ag.Apriori();
-                System.out.println("\nFundet " + frequent.size() + " hyppige itemsets (minsup=" + ag.minsup + "):");
-                int idx = 0;
-                for (Set<item> fi : frequent) {
-                    System.out.println("F" + (++idx) + ": " + fi + " (support=" + ag.support(fi) + ")");
-                    if (idx >= 50)
-                        break; // vi sætter en grænse for apriori-passet her, da det er dyrt at køre igennem al dataen
-                }
-            /*
-            // Print en enkel oppsummering per morder: navn, dag, måned, stjernetegn integer og navn
-            System.out.println("\nOppsummering av stjernetegn per morder:");
-            for (WebScrape.MorderDatapunkt m : WebScrape.alleMordereMap.values()) { // vi iterer igennem alle morderdatapunkter -
-                Integer z = m.getStjernetegn(); // og initierer z, som representerer stjernetegn for hvert datapunkt.
-                String zname;
-                if (z != null && z >= 0 && z < stjernetegnString.length) { // hvis z befinder sig indenfor scopet (vi blev nødt til at blive meget omhyggelige)
-                    zname = stjernetegnString[z];} else {zname = "Ukendt";}
-                String dagStr; // vi checker hvis dag-størrelse har en ægte værdi (over 0)
-                if (m.dag > 0) {dagStr = String.valueOf(m.dag);} else {dagStr = "ukendt";}
-                String maanedStr; // vi checker hvis maaned har værdi over 0
-                if (m.maaned > 0) {maanedStr = String.valueOf(m.maaned);} else {maanedStr = "ukendt";}
-                // vi brugte format for at præsentere et midlertidig output. https://www.w3schools.com/java/ref_string_format.asp
-                System.out.println(String.format("%s -> dag=%s maaned=%s stjernetegn=%s", m.navn, dagStr, maanedStr, zname));
-            }
-            */
-                // med vores nuværende kode, har vi ikke printet nogle apriori-passes.
-                // vi gennemfører blot et first pass. Det er også en inkonsistent data-kilde.
-            }
+        // dette er F1
+        List<Integer> items = new ArrayList<>();
+        for (Set<Integer> t : transactions){
+            items.addAll(t);
+            sort(items); // sorterer items alfabetisk
         }
 
+        //laver alle C1 (de unikke items)
+        List<Set<Integer>> C1 = new ArrayList<>();
+        for (Integer s : items) {
+            C1.add(Collections.singleton(s));
+        }
+
+        // F1
+         F1 = filterFrequent(C1);
+
+        // C2 til F2
+        List<Set<Integer>> C2 = generateCandidates(F1);
+         F2 = filterFrequent(C2);
+
+        // C3 til F3
+        List<Set<Integer>> C3 = generateCandidates(F2);
+         F3 = filterFrequent(C3);
+        frequentItemsets.clear();
+        frequentItemsets.addAll(F1);
+        frequentItemsets.addAll(F2);
+        frequentItemsets.addAll(F3);
+        return frequentItemsets;
+    }
+
+    public double confidence(Set<Integer> X, Set<Integer> Y) {
+        Set<Integer> union = new HashSet<>(X);
+        union.addAll(Y);
+
+        double supXY = support(union); // supXY viser hvor stor en andel af transaktionenerne indeholder både X og Y
+        double supX  = support(X); // transaktioner som kun indeholder X
+
+        if (supX == 0) return 0.0;
+
+        return supXY / supX;
+    }
+
+    public double lift(Set<Integer> X, Set<Integer> Y) {
+        Set<Integer> union = new HashSet<>(X);
+        union.addAll(Y);
+
+        double supXY = support(union);
+        double supX  = support(X);
+        double supY  = support(Y);
+
+        if (supX == 0 || supY == 0) return 0.0;
+
+        return supXY / (supX * supY);
+    }
+ ///  todo: lave prints med confidence og lift i WebScrape, lave en ny klasse der overtager WebScrape-metoder, lave variabler der kan sendes over med mqtt.
+} /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi viser til at vi har læst (kan være geeks4geeks eller w3schools)
