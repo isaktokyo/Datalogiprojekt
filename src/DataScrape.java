@@ -17,11 +17,13 @@ public class DataScrape {
         public MorderDatapunkt(String displayNavn) {
             this.displayNavn = displayNavn;
         }
+
         public String toString() {
-            return  displayNavn +" ¶ "+ motiv +" ¶ "+  type +" ¶ "+ fødselsdag;
+            return displayNavn + " ¶ " + motiv + " ¶ " + type + " ¶ " + fødselsdag;
         }
-        public static String normaliserNavn(String navn){
-            if(navn == null) return "";
+
+        public static String normaliserNavn(String navn) {
+            if (navn == null) return "";
             String vasket = navn;
 
             // 1. Fjern alt i parentes: "Ted Bundy (Serial Killer)" -> "Ted Bundy "
@@ -37,7 +39,7 @@ public class DataScrape {
             // Derfor må vi flytte efternavn i all-caps bagerst i navnet.
             String[] navnDeler = vasket.split("\\s+");
             String first = navnDeler[0]; // first er værdien af det første tegn i navnet
-            if(first.equals(first.toUpperCase())) { // vi checker hvis det første tegn er stor bogstav.
+            if (first.equals(first.toUpperCase())) { // vi checker hvis det første tegn er stor bogstav.
                 StringBuilder sb = new StringBuilder();
                 for (int i = 1; i < navnDeler.length; i++) { // vi itererer gennem navne
                     sb.append(navnDeler[i]); // append er en StringBuilder metode der kan gøre ændringer til en String. her flyttes de første ord bagerst.
@@ -49,6 +51,7 @@ public class DataScrape {
             return vasket.trim().toLowerCase(); // vi returnerer altså et vasket navn, og bruger displayName kun til når vi skal printe.
         }
     }
+
     public static void addToMap(Map<String, MorderDatapunkt> map, String navn, String motiv, String type, String fødselsdag) {
         String normNavn = MorderDatapunkt.normaliserNavn(navn);
 
@@ -67,16 +70,16 @@ public class DataScrape {
     }
 
     public static class FodselsdagScrape {
-// for at optimere våres logikk vil vi adde en morder til vores database hvis der ikke er nogen med samme navn.
+        // for at optimere våres logikk vil vi adde en morder til vores database hvis der ikke er nogen med samme navn.
         // Hvis navnet skulle være det samme, kan man checke om deres fødselsdag er forskellige.
-        public static ArrayList<MorderDatapunkt> getFodselsdag(String url, String cssQuery, String månedNavn){
+        public static ArrayList<MorderDatapunkt> getFodselsdag(String url, String cssQuery, String månedNavn) {
 
-           // denne metode har tre hovedopgaver: 1 - at finde fødselsdager 2 - at normalisere dataen 3 - at koble fødselsdage op mod navn så vi får datapunkter.
+            // denne metode har tre hovedopgaver: 1 - at finde fødselsdager 2 - at normalisere dataen 3 - at koble fødselsdage op mod navn så vi får datapunkter.
 
             String dag = null;
-            System.out.println("------------------"+månedNavn+"------------------");
+            System.out.println("------------------" + månedNavn + "------------------");
             ArrayList<MorderDatapunkt> mordere = new ArrayList();
-            String månedNavnCheck= url.substring(url.lastIndexOf("/") + 1); // dette giver for eksempel januar.
+            String månedNavnCheck = url.substring(url.lastIndexOf("/") + 1); // dette giver for eksempel januar.
 
             try {
                 Document document = Jsoup.connect(url).userAgent("Mozilla/5").get();
@@ -126,7 +129,7 @@ public class DataScrape {
                         mordere.add(person);
                     }
                 }
-            }catch(IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return mordere;
@@ -166,7 +169,9 @@ public class DataScrape {
             }
             System.out.println(Visionkiller); // vi printer det.
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("------------------Mission-oriented------------------");
         ArrayList<String> Missionkiller = new ArrayList<>();
@@ -192,7 +197,9 @@ public class DataScrape {
             }
             System.out.println(Missionkiller);
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("------------------Hedonistic------------------");
 
@@ -218,7 +225,9 @@ public class DataScrape {
             }
             System.out.println(Hedokiller);
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("------------------Power Control------------------");
 
@@ -253,9 +262,15 @@ public class DataScrape {
             }
             System.out.println(Powerkiller);
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        ArrayList<String> allMotives = new ArrayList<>();allMotives.addAll(Visionkiller);allMotives.addAll(Missionkiller);allMotives.addAll(Hedokiller);allMotives.addAll(Powerkiller);
+        ArrayList<String> allMotives = new ArrayList<>();
+        allMotives.addAll(Visionkiller);
+        allMotives.addAll(Missionkiller);
+        allMotives.addAll(Hedokiller);
+        allMotives.addAll(Powerkiller);
 
         System.out.println("------------------Organized------------------");
         ArrayList<String> Orgkiller = new ArrayList<>();
@@ -265,7 +280,7 @@ public class DataScrape {
             Elements killer = document.select(".category-page__member-link, li.category-page__member a");
             for (Element org : killer) {
                 String orgName = org.attr("title");
-                if (!Orgkiller.contains(orgName)&& allMotives.contains(orgName)) {
+                if (!Orgkiller.contains(orgName) && allMotives.contains(orgName)) {
 
                     Orgkiller.add(orgName);
                     addToMap(alleMordereMap, orgName, null, "Organized", null);
@@ -310,7 +325,9 @@ public class DataScrape {
             }
             System.out.println(NonOrgkiller);
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("------------------mixed------------------"); // skal vi fjerne denne?
         ArrayList<String> mixedkiller = new ArrayList<>();
@@ -336,7 +353,9 @@ public class DataScrape {
             }
             System.out.println(mixedkiller);
 
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
         // her vil vi printe ud alle fødselsdage måned for måned. Det bliver for meget kode at gøre det manuelt,
@@ -351,19 +370,19 @@ public class DataScrape {
             //dette er en midlertidig liste vi henter
             ArrayList<MorderDatapunkt> fodselsListe = FodselsdagScrape.getFodselsdag(url, cssQuery, maanederEng[i]);
 
-            if(fodselsListe!=null){
-            for (MorderDatapunkt morder : fodselsListe) {
-                // her kalles addToMap for hver person i fodselsListe som ikke findes
-                // Hvis navnet findes fra før med motiv eller type, oppdateres navnet, og hvis ikke laves der en ny.
-                addToMap(alleMordereMap, morder.displayNavn, null, null, morder.fødselsdag);
-            }
+            if (fodselsListe != null) {
+                for (MorderDatapunkt morder : fodselsListe) {
+                    // her kalles addToMap for hver person i fodselsListe som ikke findes
+                    // Hvis navnet findes fra før med motiv eller type, oppdateres navnet, og hvis ikke laves der en ny.
+                    addToMap(alleMordereMap, morder.displayNavn, null, null, morder.fødselsdag);
+                }
             }
         }
-    System.out.println("Her er alle færdige datapunkter: ");
-    ArrayList<MorderDatapunkt> alleMordere = new ArrayList<>(alleMordereMap.values());
-    alleMordere.sort((p1, p2) -> p1.displayNavn.compareTo(p2.displayNavn));
-        for(MorderDatapunkt morder : alleMordere){
-            if(!morder.motiv.equals("Ikke sat endnu") || !morder.fødselsdag.equals("Ikke sat endnu")) { // vi gidder ikke have data der ikke har motiv eller fødselsdag
+        System.out.println("Her er alle færdige datapunkter: ");
+        ArrayList<MorderDatapunkt> alleMordere = new ArrayList<>(alleMordereMap.values());
+        alleMordere.sort((p1, p2) -> p1.displayNavn.compareTo(p2.displayNavn));
+        for (MorderDatapunkt morder : alleMordere) {
+            if (!morder.motiv.equals("Ikke sat endnu") || !morder.fødselsdag.equals("Ikke sat endnu")) { // vi gidder ikke have data der ikke har motiv eller fødselsdag
                 System.out.println(morder); // vi printer alle datapunkter
             }
         }

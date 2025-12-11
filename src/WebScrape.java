@@ -9,19 +9,21 @@ public class WebScrape {
         Integer type = -1;
         String fødselsdag = "Ikke sat endnu";
         Integer dag = -1;
-        Integer maaned  = -1;
+        Integer maaned = -1;
         Integer stjernetegn = -1;
 
-        public MorderDatapunkt getMorderDatapunkt () {
+        public MorderDatapunkt getMorderDatapunkt() {
             return MorderDatapunkt.this;
         }
 
         public Integer getDag() {
             return dag;
         }
+
         public Integer getMåned() {
             return maaned;
         }
+
         public Integer getStjernetegn() {
             return stjernetegn;
         }
@@ -35,8 +37,9 @@ public class WebScrape {
         }
 
         public String toString() {
-            return navn + " ¶ " + motiv + " ¶ " + type + " ¶ " + fødselsdag+ " ¶ " /* +gender*/;
+            return navn + " ¶ " + motiv + " ¶ " + type + " ¶ " + fødselsdag + " ¶ ";
         }
+
         // for denne class bruger vi regEx som metode for data-vask. vi har taget udgangspunkt i denne artikkel: https://www.geeksforgeeks.org/java/regular-expressions-in-java/
         public static String normaliserNavn(String rawName) {
             if (rawName == null) return "";
@@ -51,7 +54,7 @@ public class WebScrape {
                 name = name.split(";;")[0].trim();
             }
 
-             //Fjerner anførselstegn
+            //Fjerner anførselstegn
             name = name.replace("\"", "");
 
             // for at bruge navn som en nøkkel, må rekkefølgen på navne fra fødselsdag og fra motiv være det samme
@@ -93,7 +96,8 @@ public class WebScrape {
             try {
                 person.dag = Integer.parseInt(fødselsdag.substring(0, 2));
                 person.maaned = Integer.parseInt(fødselsdag.substring(2, 4));
-            } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+            }
         }
 
         if (fødselsdag != null) {
@@ -127,7 +131,7 @@ public class WebScrape {
                 int mm = Integer.parseInt(ddmm.substring(0, 3));
                 int dd = Integer.parseInt(ddmm.substring(2, 4));
 
-                addToMap(map,navn, null, null, ddmm);
+                addToMap(map, navn, null, null, ddmm);
             }
         }
     }
@@ -278,11 +282,11 @@ public class WebScrape {
         ArrayList<String> Visionkiller = new ArrayList<>(); // vi laver en arraylist som navnerne bliver addet til.
         ArrayList<String> råV1 = CSVReader.visionaryData; // vi importerer den rå data til en arraylist
         ArrayList<String> råV = filter(råV1);
-        for(String line : råV) {
+        for (String line : råV) {
             String visionaryNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
 
-            if(!Visionkiller.contains(keyNavn)) {
+            if (!Visionkiller.contains(keyNavn)) {
                 Visionkiller.add(visionaryNavn);
                 addToMap(alleMordereMap, visionaryNavn, 0, null, null);
             }
@@ -293,11 +297,11 @@ public class WebScrape {
         ArrayList<String> Missionkiller = new ArrayList<>();
         ArrayList<String> råM1 = CSVReader.missionData;
         ArrayList<String> råM = filter(råM1);
-        for(String line : råM) {
-            String missionNavn =line;
+        for (String line : råM) {
+            String missionNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
 
-            if(!Missionkiller.contains(keyNavn)) {
+            if (!Missionkiller.contains(keyNavn)) {
                 Missionkiller.add(missionNavn);
                 addToMap(alleMordereMap, missionNavn, 1, null, null);
             }
@@ -309,10 +313,10 @@ public class WebScrape {
         ArrayList<String> råH1 = CSVReader.hedonisticData;
         ArrayList<String> råH = filter(råH1);
 
-        for(String line : råH) {
+        for (String line : råH) {
             String HedoNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
-            if(!Hedokiller.contains(keyNavn)) {
+            if (!Hedokiller.contains(keyNavn)) {
                 Hedokiller.add(HedoNavn);
                 addToMap(alleMordereMap, HedoNavn, 2, null, null);
             }
@@ -324,11 +328,11 @@ public class WebScrape {
         ArrayList<String> råP1 = CSVReader.powerData;
         ArrayList<String> råP = filter(råP1);
 
-        for(String line : råP) {
+        for (String line : råP) {
             String PowerNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
 
-            if(!Powerkiller.contains(keyNavn)) {
+            if (!Powerkiller.contains(keyNavn)) {
                 Powerkiller.add(PowerNavn);
                 addToMap(alleMordereMap, PowerNavn, 3, null, null);
             }
@@ -340,10 +344,10 @@ public class WebScrape {
         ArrayList<String> råO1 = CSVReader.organizedData;
         ArrayList<String> råO = filter(råO1);
 
-        for(String line : råO) {
+        for (String line : råO) {
             String orgNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
-            if(!orgkiller.contains(keyNavn)) {
+            if (!orgkiller.contains(keyNavn)) {
                 orgkiller.add(orgNavn);
                 addToMap(alleMordereMap, orgNavn, null, 0, null);
             }
@@ -355,11 +359,11 @@ public class WebScrape {
         ArrayList<String> råU1 = CSVReader.disorganizedData;
         ArrayList<String> råU = filter(råU1);
 
-        for(String line : råU) {
+        for (String line : råU) {
             String uNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
 
-            if(!unkiller.contains(keyNavn)) {
+            if (!unkiller.contains(keyNavn)) {
                 unkiller.add(uNavn);
                 addToMap(alleMordereMap, uNavn, null, 1, null);
             }
@@ -371,10 +375,10 @@ public class WebScrape {
         ArrayList<String> råMi1 = CSVReader.mixedData;
         ArrayList<String> råMi = filter(råMi1);
 
-        for(String line : råMi) {
+        for (String line : råMi) {
             String mixedNavn = line;
             String keyNavn = MorderDatapunkt.normaliserNavn(line);
-            if(!mixedkiller.contains(keyNavn)) {
+            if (!mixedkiller.contains(keyNavn)) {
                 mixedkiller.add(mixedNavn);
                 addToMap(alleMordereMap, mixedNavn, null, 2, null);
             }
