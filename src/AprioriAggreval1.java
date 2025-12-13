@@ -1,8 +1,45 @@
 import java.util.*;
-
 import static java.util.Collections.sort;
 
 public class AprioriAggreval1 {
+
+    // RULE-KLASSE (TIL REGLER / MQTT)
+    public static class Rule {
+        public final Set<Integer> X;      // antecedent
+        public final Set<Integer> Y;      // consequent
+        public final double support;
+        public final double confidence;
+        public final double lift;
+
+        public Rule(Set<Integer> X, Set<Integer> Y,
+                    double support, double confidence, double lift) {
+
+            this.X = X;
+            this.Y = Y;
+            this.support = support;
+            this.confidence = confidence;
+            this.lift = lift;
+        }
+
+        // JSON-agtig tekst, som er nem at sende via MQTT
+        public String toJson() {
+            return String.format(
+                "{\"X\":\"%s\",\"Y\":\"%s\",\"support\":%.4f," +
+                "\"confidence\":%.4f,\"lift\":%.4f}",
+                X, Y, support, confidence, lift
+            );
+        }
+
+        @Override
+        public String toString() {
+            return X + " -> " + Y +
+                   " | sup=" + support +
+                   ", conf=" + confidence +
+                   ", lift=" + lift;
+        }
+    }
+
+    // FELTER TIL APRIORI
 
     private final List<Set<Integer>> transactions;
     private static final Set<Set<Integer>> frequentItemsets = new HashSet<>();
@@ -13,17 +50,21 @@ public class AprioriAggreval1 {
     static List<Set<Integer>> F3 = new ArrayList<>();
 
     public AprioriAggreval1(List<Set<Integer>> transactions) {
-        this.transactions =transactions;
-        minsup = 0.05; // default
+        this.transactions = transactions;
+        this.minsup = 0.05; // default
     }
+
     public List<Set<Integer>> getAggreval() {
         return transactions;
     }
 
-    // ligesom isaks forrige men rettet til
-    public double support(Set<Integer> X) { // data mining bog side 98
+    // SUPPORT
+
+    // support(X): andel af transaktioner der indeholder hele itemsettet X
+    public double support(Set<Integer> X) {
         int count = 0;
         if (transactions == null || transactions.isEmpty()) return 0.0;
+
         for (Set<Integer> t : transactions) {
             if (t.containsAll(X)) {
                 count++;
@@ -31,22 +72,21 @@ public class AprioriAggreval1 {
         }
         return (double) count / transactions.size();
     }
-    
-    // hjælpeklasser - vi skal måske ikke bruge dem, har bedt chat om at lave dem
-    // generate candidates - lavet ud fra github manden ifølge chat
+
+    //HJÆLPEMETODER TIL APRIORI
+
+    // generateCandidates: danner C_{k+1} ud fra F_k
     private List<Set<Integer>> generateCandidates(List<Set<Integer>> Fk) {
         List<List<Integer>> Ck1 = new ArrayList<>();
 
         for (int i = 0; i < Fk.size(); i++) {
             for (int j = i + 1; j < Fk.size(); j++) {
 
-                List<Integer> A =  new ArrayList<>(Fk.get(i)); // vi laver arraylists,
-                List<Integer> B =  new ArrayList<>(Fk.get(j)); // så vi kan bruge indeks af de forskellige lister.
-                // dette kan man nemligt ikke med HashSet, hvilket vores kode er baseret på.
+                List<Integer> A = new ArrayList<>(Fk.get(i));
+                List<Integer> B = new ArrayList<>(Fk.get(j));
 
                 // join kun hvis de første k-1 matcher
                 if (A.size() == 1 || prefixMatches(A, B)) {
-
                     List<Integer> joined = new ArrayList<>(A);
                     joined.add(B.get(B.size() - 1));
 
@@ -56,14 +96,15 @@ public class AprioriAggreval1 {
                 }
             }
         }
-        List<Set<Integer>> Ckay = new ArrayList<>(); // vores metode returnerer List af set af integers.
-        for(List<Integer> Ck : Ck1) { // derfor skal vi iterere igennem Ck1,
-            Ckay.add(new HashSet<> (Ck)); // og caste indholdet tilbage til List af set af integer.
+
+        List<Set<Integer>> Ckay = new ArrayList<>();
+        for (List<Integer> Ck : Ck1) {
+            Ckay.add(new HashSet<>(Ck));
         }
         return Ckay;
     }
 
-    // prefix matches, forstår ikke - men de hjælper til join step
+    // prefixMatches: tjekker om to lister er ens på de første k-1 positioner
     private boolean prefixMatches(List<Integer> A, List<Integer> B) {
         if (A.size() != B.size()) return false;
 
@@ -75,83 +116,75 @@ public class AprioriAggreval1 {
         return true;
     }
 
-    // github mandens måde at filtrere ud kandidater under minsup
+    // filtrerer kandidater under minsup fra
     private List<Set<Integer>> filterFrequent(List<Set<Integer>> Ck) {
-        List<Set<Integer>> Fk = new ArrayList<>(); // initierer Liste med itemsets med frequent candidates
+        List<Set<Integer>> Fk = new ArrayList<>();
 
         for (Set<Integer> cand : Ck) {
             double x = support(cand);
-            if(x>=minsup) {
+            if (x >= minsup) {
                 Fk.add(cand);
             }
         }
         return Fk;
     }
 
-    // downward closure ifølge bogen Behold
-    private boolean allSubsetsFrequent(Set<Integer> candidate, List<Set<Integer>> Fk) {
-        for (Integer removed : candidate) {
-            Set<Integer> subset = new HashSet<>(candidate);
-            subset.remove(removed);
-
-            if (!Fk.contains(subset)) {
-                return false;
-            }
-        }
-        return true;
-    }
+    // (bruges hvis du vil have supports på alle itemsets samlet)
     public Map<Set<Integer>, Double> allSetsSupport() {
-        Map<Set<Integer>, Double> Support = new HashMap<>();
+        Map<Set<Integer>, Double> supportMap = new HashMap<>();
 
-        for(Set<Integer> itemSet : frequentItemsets) { // vi vil finde første plads i et itemset
-            // og pladsen efter, og beregne deres support
-                double x = support(itemSet);
-                Support.put(itemSet, x);
+        for (Set<Integer> itemSet : frequentItemsets) {
+            double x = support(itemSet);
+            supportMap.put(itemSet, x);
         }
-        return Support;
+        return supportMap;
     }
 
-    // selve apriori metoden (alt er apriori, men her knyttes ting sammen
+    //SELVE APRIORI
+
     public Set<Set<Integer>> Apriori() {
 
-        // dette er F1
         List<Integer> items = new ArrayList<>();
-        for (Set<Integer> t : transactions){
+        for (Set<Integer> t : transactions) {
             items.addAll(t);
-            sort(items); // sorterer items alfabetisk
         }
+        sort(items);
 
-        //laver alle C1 (de unikke items)
+        // C1: alle 1-itemsets
         List<Set<Integer>> C1 = new ArrayList<>();
         for (Integer s : items) {
             C1.add(Collections.singleton(s));
         }
 
         // F1
-         F1 = filterFrequent(C1);
+        F1 = filterFrequent(C1);
 
-        // C2 til F2
+        // C2 -> F2
         List<Set<Integer>> C2 = generateCandidates(F1);
-         F2 = filterFrequent(C2);
+        F2 = filterFrequent(C2);
 
-        // C3 til F3
+        // C3 -> F3
         List<Set<Integer>> C3 = generateCandidates(F2);
-         F3 = filterFrequent(C3);
+        F3 = filterFrequent(C3);
+
         frequentItemsets.clear();
         frequentItemsets.addAll(F1);
         frequentItemsets.addAll(F2);
         frequentItemsets.addAll(F3);
+
         return frequentItemsets;
     }
+
+    // CONFIDENCE & LIFT
 
     public double confidence(Set<Integer> X, Set<Integer> Y) {
         Set<Integer> union = new HashSet<>(X);
         union.addAll(Y);
 
-        double supXY = support(union); // supXY viser hvor stor en andel af transaktionenerne indeholder både X og Y
-        double supX  = support(X); // transaktioner som kun indeholder X
+        double supXY = support(union);
+        double supX  = support(X);
 
-        if (supX == 0) return 0.0;
+        if (supX == 0.0) return 0.0;
 
         return supXY / supX;
     }
@@ -164,9 +197,41 @@ public class AprioriAggreval1 {
         double supX  = support(X);
         double supY  = support(Y);
 
-        if (supX == 0 || supY == 0) return 0.0;
+        if (supX == 0.0 || supY == 0.0) return 0.0;
 
         return supXY / (supX * supY);
     }
- ///  todo: lave prints med confidence og lift i WebScrape, lave en ny klasse der overtager WebScrape-metoder, lave variabler der kan sendes over med mqtt.
-} /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi viser til at vi har læst (kan være geeks4geeks eller w3schools)
+
+    //  GENERER 1-ITEM → 1-ITEM-REGLER 
+
+    public List<Rule> generateRules(double minConfidence) {
+        List<Rule> rules = new ArrayList<>();
+
+        for (Set<Integer> itemset : frequentItemsets) {
+            if (itemset.size() < 2) continue;
+
+            List<Integer> items = new ArrayList<>(itemset);
+
+            for (int i = 0; i < items.size(); i++) {
+                for (int j = 0; j < items.size(); j++) {
+                    if (i == j) continue;
+
+                    Set<Integer> X = new HashSet<>(Collections.singleton(items.get(i)));
+                    Set<Integer> Y = new HashSet<>(Collections.singleton(items.get(j)));
+
+                    double supXY = support(itemset);
+                    double conf = confidence(X, Y);
+
+                    if (conf >= minConfidence) {
+                        double liftVal = lift(X, Y);
+                        Rule r = new Rule(X, Y, supXY, conf, liftVal);
+                        rules.add(r);
+                    }
+                }
+            }
+        }
+        return rules;
+    }
+}
+// todo: lave prints med confidence og lift i WebScrape, lave en ny klasse der overtager WebScrape-metoder, lave variabler der kan sendes over med mqtt.
+} /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi vi ser til at vi har læst (kan være geeks4geeks eller w3schools)
