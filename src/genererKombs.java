@@ -1,5 +1,5 @@
 import java.util.*;
-
+/*
  public class genererKombs {
      static void genererKombs(int index, List<String> combInst, int comblength, // geeks4geeks
                               Set<ArrayList<String>> resultat, String[] arr) {
@@ -24,4 +24,34 @@ import java.util.*;
          genererKombs(0, inputs, r, resultat1, arr);
          return resultat1;
      }
- }
+ }*/
+import java.util.*;
+
+public class genererKombs {
+
+    // rekursiv metode for å generere kombinasjoner av integers
+    static void genererKombs(int index, Set<Integer> combInst, int comblength,
+                             Set<Set<Integer>> resultat, List<Integer> arr) {
+        // index er algoritmens nuværende posisjon i arr, combInst er en instans som bygges
+        if (combInst.size() == comblength) { // når vi har valgt nok elementer, lagres kombinasjonen
+            resultat.add(new HashSet<>(combInst));
+            return;
+        }
+
+        // mønsteret: velg et element, utforsk rekursivt, fjern elementet igjen
+        for (int i = index; i < arr.size(); i++) {
+            combInst.add(arr.get(i));
+            genererKombs(i + 1, combInst, comblength, resultat, arr);
+            combInst.remove(arr.get(i));
+        }
+    }
+
+    // metoden tar input Set<Integer> og r, returnerer alle kombinasjoner av størrelse r
+    static Set<Set<Integer>> generer(Set<Integer> itemset, int r) {
+        Set<Set<Integer>> resultat1 = new HashSet<>();
+        List<Integer> items = new ArrayList<>(itemset);
+        Set<Integer> inputs = new HashSet<>();
+        genererKombs(0, inputs, r, resultat1, items);
+        return resultat1;
+    }
+}

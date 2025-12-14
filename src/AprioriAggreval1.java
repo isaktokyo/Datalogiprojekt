@@ -1,4 +1,5 @@
 import java.util.*;
+import com.google.gson.Gson;
 import static java.util.Collections.sort;
 
 public class AprioriAggreval1 {
@@ -23,26 +24,28 @@ public class AprioriAggreval1 {
 
         // JSON-agtig tekst, som er nem at sende via MQTT
         public String toJson() {
-            return String.format(
-                "{\"X\":\"%s\",\"Y\":\"%s\",\"support\":%.4f," +
-                "\"confidence\":%.4f,\"lift\":%.4f}",
-                X, Y, support, confidence, lift
-            );
+            Map<String, Object> map = new HashMap<>();
+            map.put("X", X);
+            map.put("Y", Y);
+            map.put("support", support);
+            map.put("confidence", confidence);
+            map.put("lift", lift);
+
+            return new Gson().toJson(map); // denne ressurse gør det nemmere at overføre Set<String> til JSON
         }
 
         @Override
         public String toString() {
             return X + " -> " + Y +
-                   " | sup=" + support +
-                   ", conf=" + confidence +
-                   ", lift=" + lift;
+                    " | sup=" + support +
+                    ", conf=" + confidence +
+                    ", lift=" + lift;
         }
     }
 
     // FELTER TIL APRIORI
-
     private final List<Set<Integer>> transactions;
-    private static final Set<Set<Integer>> frequentItemsets = new HashSet<>();
+    public static final Set<Set<Integer>> frequentItemsets = new HashSet<>();
     private final double minsup;
 
     static List<Set<Integer>> F1 = new ArrayList<>();
@@ -176,7 +179,6 @@ public class AprioriAggreval1 {
     }
 
     // CONFIDENCE & LIFT
-
     public double confidence(Set<Integer> X, Set<Integer> Y) {
         Set<Integer> union = new HashSet<>(X);
         union.addAll(Y);
@@ -202,8 +204,7 @@ public class AprioriAggreval1 {
         return supXY / (supX * supY);
     }
 
-    //  GENERER 1-ITEM → 1-ITEM-REGLER 
-
+    //  GENERER 1-ITEM → 1-ITEM-REGLER
     public List<Rule> generateRules(double minConfidence) {
         List<Rule> rules = new ArrayList<>();
 
@@ -232,6 +233,15 @@ public class AprioriAggreval1 {
         }
         return rules;
     }
+    public double normalizedSupport(Set<Integer> X) {
+        double sup = support(X);
+
+        for (Integer i : X) {
+            if (i >= 12 && i < 16) sup /= 4.0; // motiv
+            else if (i >= 16)      sup /= 3.0; // type
+        }
+        return sup;
+    }
 }
-// todo: lave prints med confidence og lift i WebScrape, lave en ny klasse der overtager WebScrape-metoder, lave variabler der kan sendes over med mqtt.
-} /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi vi ser til at vi har læst (kan være geeks4geeks eller w3schools)
+// todo: lave prints med confidence og lift i WebScrape, lave variabler der kan sendes over med mqtt.
+ /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi viser til at vi har læst (kan være geeks4geeks eller w3schools)
