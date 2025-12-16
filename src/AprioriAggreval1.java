@@ -1,20 +1,24 @@
 import java.util.*;
+
 import com.google.gson.Gson;
+
 import static java.util.Collections.sort;
 
 public class AprioriAggreval1 {
 
-    // RULE-KLASSE (TIL REGLER / MQTT)
+    // rule-klasse til regler og mqtt
     public static class Rule {
+        public String navn;
         public final Set<Integer> X;      // antecedent
         public final Set<Integer> Y;      // consequent
         public final double support;
         public final double confidence;
         public final double lift;
 
-        public Rule(Set<Integer> X, Set<Integer> Y,
+        public Rule(String name, Set<Integer> X, Set<Integer> Y,
                     double support, double confidence, double lift) {
 
+            this.navn = name;
             this.X = X;
             this.Y = Y;
             this.support = support;
@@ -22,9 +26,10 @@ public class AprioriAggreval1 {
             this.lift = lift;
         }
 
-        // JSON-agtig tekst, som er nem at sende via MQTT
+        // JSON tekst, som er nem at sende via MQTT
         public String toJson() {
             Map<String, Object> map = new HashMap<>();
+            map.put("navn", navn);
             map.put("X", X);
             map.put("Y", Y);
             map.put("support", support);
@@ -36,14 +41,15 @@ public class AprioriAggreval1 {
 
         @Override
         public String toString() {
-            return X + " -> " + Y +
+            return (navn != null ? navn + " : " : "") +
+                    X + " -> " + Y +
                     " | sup=" + support +
                     ", conf=" + confidence +
                     ", lift=" + lift;
         }
     }
 
-    // FELTER TIL APRIORI
+    // Felter til Apriori
     private final List<Set<Integer>> transactions;
     public static final Set<Set<Integer>> frequentItemsets = new HashSet<>();
     private final double minsup;
@@ -54,7 +60,7 @@ public class AprioriAggreval1 {
 
     public AprioriAggreval1(List<Set<Integer>> transactions) {
         this.transactions = transactions;
-        this.minsup = 0.05; // default
+        this.minsup = 0.005; // default
     }
 
     public List<Set<Integer>> getAggreval() {
@@ -80,31 +86,37 @@ public class AprioriAggreval1 {
 
     // generateCandidates: danner C_{k+1} ud fra F_k
     private List<Set<Integer>> generateCandidates(List<Set<Integer>> Fk) {
-        List<List<Integer>> Ck1 = new ArrayList<>();
+        List<Set<Integer>> Ck1 = new ArrayList<>();
 
-        for (int i = 0; i < Fk.size(); i++) {
-            for (int j = i + 1; j < Fk.size(); j++) {
+        List<List<Integer>> sorteretFk = new ArrayList<>();
+        for (Set<Integer> t : Fk) {
+            List<Integer> candidate = new ArrayList<>(t);
+            Collections.sort(candidate);
+            sorteretFk.add(candidate);
+        }
 
-                List<Integer> A = new ArrayList<>(Fk.get(i));
-                List<Integer> B = new ArrayList<>(Fk.get(j));
+        Set<Set<Integer>> settFør = new HashSet<>(); // for at skabe et korrekt third pass, må dataen sorteres. et HashSet er nemlig uordnet.
+        for (int i = 0; i < sorteretFk.size(); i++) {
+            for (int j = i + 1; j < sorteretFk.size(); j++) {
+                List<Integer> a = sorteretFk.get(i); // a er en arraylist med værdi af i på ethvert punkt
+                List<Integer> b = sorteretFk.get(j); // b er en arraylist af værdier af i+1 på ethvert givent tidspunkt
 
-                // join kun hvis de første k-1 matcher
-                if (A.size() == 1 || prefixMatches(A, B)) {
-                    List<Integer> joined = new ArrayList<>(A);
-                    joined.add(B.get(B.size() - 1));
+                // join listerne kun hvis de første k-1 matcher (k = størrelse af a)
+                if (a.size() == 1 || prefixMatches(a, b)) {
+                    List<Integer> joinedList = new ArrayList<>(a);
+                    // tilføj det sidste element fra b (som er større eller forskelligt pga. sortering)
+                    joinedList.add(b.get(b.size() - 1));
+                    Collections.sort(joinedList); // sørger for at listen er konstant reproducerbar, eller deterministisk.
 
-                    if (!Ck1.contains(joined)) {
-                        Ck1.add(joined);
+                    Set<Integer> joinedSet = new HashSet<>(joinedList);
+                    if (!settFør.contains(joinedSet)) { // settFør vil sørge for at vi ikke adder noogle duplikater til joinedSet.
+                        settFør.add(joinedSet);
+                        Ck1.add(joinedSet);
                     }
                 }
             }
         }
-
-        List<Set<Integer>> Ckay = new ArrayList<>();
-        for (List<Integer> Ck : Ck1) {
-            Ckay.add(new HashSet<>(Ck));
-        }
-        return Ckay;
+        return Ck1;
     }
 
     // prefixMatches: tjekker om to lister er ens på de første k-1 positioner
@@ -132,39 +144,40 @@ public class AprioriAggreval1 {
         return Fk;
     }
 
-    // (bruges hvis du vil have supports på alle itemsets samlet)
-    public Map<Set<Integer>, Double> allSetsSupport() {
-        Map<Set<Integer>, Double> supportMap = new HashMap<>();
-
-        for (Set<Integer> itemSet : frequentItemsets) {
-            double x = support(itemSet);
-            supportMap.put(itemSet, x);
-        }
-        return supportMap;
-    }
-
     //SELVE APRIORI
 
     public Set<Set<Integer>> Apriori() {
 
+        //alternativ, der giver sorterede lister
+        ///  skal vi referere til chat på f eks dette? treeSet var et forslag som gav os mulighed til at samle unike, sorterede i items
+
+        Set<Integer> uniqueItems = new TreeSet<>(); // vi gør det samme som nedenunder, men behandler dataen konsekvent som Set<Integer>, hvilke er uordnede.
+        // derfor får vi dataen sorteret samtidig som vi husker de unikke værdier.
+        for (Set<Integer> t : transactions) {
+            uniqueItems.addAll(t);// vi adder hver unike værdi. det er altså ikke duplikater her.
+        }
+        /*
         List<Integer> items = new ArrayList<>();
         for (Set<Integer> t : transactions) {
             items.addAll(t);
         }
         sort(items);
-
+*/
         // C1: alle 1-itemsets
         List<Set<Integer>> C1 = new ArrayList<>();
-        for (Integer s : items) {
+        for (Integer s : uniqueItems) {
             C1.add(Collections.singleton(s));
         }
 
         // F1
         F1 = filterFrequent(C1);
+        // F1 = removeDuplicateSets(C1);
 
         // C2 -> F2
         List<Set<Integer>> C2 = generateCandidates(F1);
         F2 = filterFrequent(C2);
+        // F1 = removeDuplicateSets(C1);
+
 
         // C3 -> F3
         List<Set<Integer>> C3 = generateCandidates(F2);
@@ -184,7 +197,7 @@ public class AprioriAggreval1 {
         union.addAll(Y);
 
         double supXY = support(union);
-        double supX  = support(X);
+        double supX = support(X);
 
         if (supX == 0.0) return 0.0;
 
@@ -196,15 +209,15 @@ public class AprioriAggreval1 {
         union.addAll(Y);
 
         double supXY = support(union);
-        double supX  = support(X);
-        double supY  = support(Y);
+        double supX = support(X);
+        double supY = support(Y);
 
         if (supX == 0.0 || supY == 0.0) return 0.0;
 
         return supXY / (supX * supY);
     }
 
-    //  GENERER 1-ITEM → 1-ITEM-REGLER
+    //  Genererer 1-itemsets til 1-itemset-regler.
     public List<Rule> generateRules(double minConfidence) {
         List<Rule> rules = new ArrayList<>();
 
@@ -217,6 +230,8 @@ public class AprioriAggreval1 {
                 for (int j = 0; j < items.size(); j++) {
                     if (i == j) continue;
 
+                    String name = items.get(i).toString();
+
                     Set<Integer> X = new HashSet<>(Collections.singleton(items.get(i)));
                     Set<Integer> Y = new HashSet<>(Collections.singleton(items.get(j)));
 
@@ -225,7 +240,7 @@ public class AprioriAggreval1 {
 
                     if (conf >= minConfidence) {
                         double liftVal = lift(X, Y);
-                        Rule r = new Rule(X, Y, supXY, conf, liftVal);
+                        Rule r = new Rule(name, X, Y, supXY, conf, liftVal);
                         rules.add(r);
                     }
                 }
@@ -233,15 +248,5 @@ public class AprioriAggreval1 {
         }
         return rules;
     }
-    public double normalizedSupport(Set<Integer> X) {
-        double sup = support(X);
-
-        for (Integer i : X) {
-            if (i >= 12 && i < 16) sup /= 4.0; // motiv
-            else if (i >= 16)      sup /= 3.0; // type
-        }
-        return sup;
-    }
 }
-// todo: lave prints med confidence og lift i WebScrape, lave variabler der kan sendes over med mqtt.
- /// vi må også finde kilder på metoder og teknikker der bliver brugt, så vi viser til at vi har læst (kan være geeks4geeks eller w3schools)
+/// vi skal vise til kilder på metoder og teknikker der bliver brugt, så vi viser til det vi har læst

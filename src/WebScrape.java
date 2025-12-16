@@ -57,8 +57,8 @@ public class WebScrape {
             //Fjerner anførselstegn
             name = name.replace("\"", "");
 
-            //
-            // todo kig på denne kode igen. hvad viser den/betyder den
+
+            // todo alle kigger på denne kode igen. hvad viser den/betyder den
             if (name.contains(",")) { // derfor gør vi om navne der står med efternavne først
                 String[] parts = name.split(",");
                 if (parts.length >= 2) {
@@ -97,7 +97,7 @@ public class WebScrape {
             try {
                 person.dag = Integer.parseInt(fødselsdag.substring(0, 2));
                 person.maaned = Integer.parseInt(fødselsdag.substring(2, 4));
-                } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException ignored) {
             }
         }
 
@@ -150,17 +150,12 @@ public class WebScrape {
     // ikke-organiseret = 1
     // mixed = 2
 
-    // Dette er mappede navn for alle stjernetegn fra 0 til 11 (svarer til TilStjernetegn1-classen)
-    private static final String[] stjernetegnString = { // dette er for outputtets skyld
-            "Vædder", "Tyr", "Tvilling", "Krebs", "Løve", "Jomfru",
-            "Vægt", "Skorpion", "Skytte", "Stenbuk", "Vandmand", "Fisk"
-    };
-
     static void main() {
         loadData();
     }
 
-    public static void loadData() { // pleide å være main
+    public static void loadData() { // pleide å være main, men siden vi ikke vil bruge WebScrape som vores
+        // entry-point til programmet har vi ændret dette. Istedenfor har vi en main som kun kører
         CSVReader leser = new CSVReader();
         leser.run();
 
