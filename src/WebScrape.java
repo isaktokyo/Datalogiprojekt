@@ -273,10 +273,9 @@ public class WebScrape {
         alleMordere.sort((p1, p2) -> p1.navn.compareTo(p2.navn)); // alfabetisk sortering. (https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html#sort(java.util.Comparator))
         for (MorderDatapunkt morder : alleMordere) {
             if (!morder.motiv.equals(-1) || !morder.fødselsdag.equals("Ikke sat endnu")) {// vi gidder ikke have data der ikke har motiv eller fødselsdag
-                /// her genererer vi random motiv til de mordere der mangler, grundet inkonsistent data. REFERER til dette
-                // skal vi bruge randomData så?
+
                 // for at få denne apriori til at give noget meningsfyldt data til trods for vores mangel på motiv og type-data
-                // vil vi distubruere alle manglende motiv og typer ligeligt ud over de mulige værdier, så resultatet vil svare til en reel tendens hos dataen.
+                // vil vi distibruere alle manglende motiv og typer ligeligt ud over de mulige værdier, så resultatet vil svare til en reel tendens hos dataen.
                 if (morder.motiv == -1) {
                     int antallMotiv = 4;
                     morder.motiv = teller % antallMotiv;

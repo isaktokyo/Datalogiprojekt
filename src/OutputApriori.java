@@ -7,7 +7,7 @@ import java.util.*;
 
 public class OutputApriori {
 
-    // med tanke på single responsibility principle fungerer denne klasses main-metode som entry point for programmet.
+    // med tanke på single responsibility principle fungerer denne klasses som entry point for programmet.
     // Vi vil konvertere ArrayList<alleMordere> til en List<List<Integer>> for at få mindre tematik over i selve apriori.
 
     static void main() { // denne main køres for at lave JSon og give output
@@ -19,13 +19,13 @@ public class OutputApriori {
 
         // Output til JSON
         Gson gson = new Gson();
-        List<List<Integer>> f1ForP5 = new ArrayList<>();
-
-        for (Set<Integer> t : txs) { // her iterer vi igennem hver transaction i txs
-            List<Integer> enkelt = new ArrayList<>(t); // laver en ArrayListe med integers med udgangspunkt
-            Collections.sort(enkelt);                 // valgfritt: sorterer for konsistent output
-            f1ForP5.add(enkelt);
+        List<List<Integer>> f1ForP5 = new ArrayList<>(); // vi initierer en arrayliste der skal fodres ind i vores histogram-visualisering.
+        for (Set<Integer> t : txs) {
+            for (Integer item : t) {
+                    f1ForP5.add(List.of(item)); // én-verdi-liste for f1
+            }
         }
+
         try (FileWriter writer = new FileWriter("/Users/isakreite/IdeaProjects/MQTT/f1.json")) {
             gson.toJson(f1ForP5, writer);
         } catch (IOException e) {
