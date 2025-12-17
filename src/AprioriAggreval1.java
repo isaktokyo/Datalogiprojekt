@@ -6,7 +6,7 @@ import static java.util.Collections.sort;
 
 public class AprioriAggreval1 {
 
-    // rule-klasse til regler og mqtt
+    // rule-klasse til regler
     public static class Rule {
         public String navn;
         public final Set<Integer> X;      // antecedent
@@ -24,19 +24,6 @@ public class AprioriAggreval1 {
             this.support = support;
             this.confidence = confidence;
             this.lift = lift;
-        }
-
-        // JSON tekst, som er nem at sende via MQTT
-        public String toJson() {
-            Map<String, Object> map = new HashMap<>();
-            map.put("navn", navn);
-            map.put("X", X);
-            map.put("Y", Y);
-            map.put("support", support);
-            map.put("confidence", confidence);
-            map.put("lift", lift);
-
-            return new Gson().toJson(map); // denne ressurse gør det nemmere at overføre Set<String> til JSON
         }
 
         @Override
@@ -63,12 +50,6 @@ public class AprioriAggreval1 {
         this.minsup = 0.005; // default
     }
 
-    public List<Set<Integer>> getAggreval() {
-        return transactions;
-    }
-
-    // SUPPORT
-
     // support(X): andel af transaktioner der indeholder hele itemsettet X
     public double support(Set<Integer> X) {
         int count = 0;
@@ -83,7 +64,7 @@ public class AprioriAggreval1 {
     }
 
     //HJÆLPEMETODER TIL APRIORI
-
+// nedenunder
     // generateCandidates: danner C_{k+1} ud fra F_k
     private List<Set<Integer>> generateCandidates(List<Set<Integer>> Fk) {
         List<Set<Integer>> Ck1 = new ArrayList<>();
@@ -171,12 +152,12 @@ public class AprioriAggreval1 {
 
         // F1
         F1 = filterFrequent(C1);
-        // F1 = removeDuplicateSets(C1);
+         F1 = RegelProcessing.removeDuplicateSets(C1);
 
         // C2 -> F2
         List<Set<Integer>> C2 = generateCandidates(F1);
         F2 = filterFrequent(C2);
-        // F1 = removeDuplicateSets(C1);
+         F1 = RegelProcessing.removeDuplicateSets(C1);
 
 
         // C3 -> F3
@@ -216,9 +197,12 @@ public class AprioriAggreval1 {
 
         return supXY / (supX * supY);
     }
+// istedenfor en generateRules metode her (som der tidligere var,
+// laver vi manuelt regler i RegelProcessing.processRules, der er case-sepcifikke,
+// skalerbare og kan lave labels. (RegelProcessing, fra linje 102)
 
     //  Genererer 1-itemsets til 1-itemset-regler.
-    public List<Rule> generateRules(double minConfidence) {
+    /*public List<Rule> generateRules(double minConfidence) {
         List<Rule> rules = new ArrayList<>();
 
         for (Set<Integer> itemset : frequentItemsets) {
@@ -247,6 +231,6 @@ public class AprioriAggreval1 {
             }
         }
         return rules;
-    }
+    }*/
 }
 /// vi skal vise til kilder på metoder og teknikker der bliver brugt, så vi viser til det vi har læst
