@@ -22,7 +22,7 @@ public class OutputApriori {
         List<List<Integer>> f1ForP5 = new ArrayList<>(); // vi initierer en arrayliste der skal fodres ind i vores histogram-visualisering.
         for (Set<Integer> t : txs) {
             for (Integer item : t) {
-                    f1ForP5.add(List.of(item)); // én-verdi-liste for f1
+                    f1ForP5.add(List.of(item));           // én-verdi-liste for f1
             }
         }
 

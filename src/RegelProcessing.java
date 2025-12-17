@@ -36,10 +36,10 @@ public class RegelProcessing {
 
     public static Set<AprioriAggreval1.Rule> processRules(List<Set<Integer>> txs) {
 
-        List<List<Integer>> txsTilBi = OrkestrerData.convertToBinary(txs);
-        List<Set<Integer>> transactions = OrkestrerData.convertBinaryToTransactions(txsTilBi);
-        AprioriAggreval1 apriori = new AprioriAggreval1(transactions);
-        apriori.Apriori();
+        List<List<Integer>> txsTilBi = OrkestrerData.convertToBinary(txs); // transactioner formateres til nbinære værdier
+        List<Set<Integer>> transactions = OrkestrerData.convertBinaryToTransactions(txsTilBi); // binære værdier til Set<Integer>
+        AprioriAggreval1 apriori = new AprioriAggreval1(transactions); //
+        apriori.Apriori(); // preprocessering er nu færdig.
 
         SupportScaler scaler = new DomainSupportScaler();
 
@@ -50,15 +50,15 @@ public class RegelProcessing {
             if (n < 2) continue; // vi skal bruge itemsets større end 2 værdier for at lave rules.
 
             for (int r = 1; r < n; r++) {
-                Set<Set<Integer>> Xsets = genererKombs.generer(itemset, r); //
+                Set<Set<Integer>> Xsets = genererKombs.generer(itemset, r); // her bruges
                 for (Set<Integer> X : Xsets) {
-                    Set<Integer> Y = new HashSet<>(itemset);
-                    Y.removeAll(X);
+                    Set<Integer> Y = new HashSet<>(itemset); //
+                    Y.removeAll(X); //
 
                     double supXY = scaler.scale(itemset, apriori.support(itemset));
                     double conf = apriori.confidence(X, Y);
                     double liftVal = apriori.lift(X, Y);
-                    String name = CreateLabels.labelForSet(X) + " -> " + CreateLabels.labelForSet(Y);
+                    String name = CreateLabels.labelForSet(X) + " -> " + CreateLabels.labelForSet(Y); //
 
                     if (conf >= 0.0) {
                         AprioriAggreval1.Rule rule = new AprioriAggreval1.Rule(name, X, Y, supXY, conf, liftVal);
